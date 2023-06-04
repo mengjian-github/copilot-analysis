@@ -1,0 +1,1 @@
+module.exports = require("azure/opentelemetry-instrumentation-azure-sdk");

@@ -1,0 +1,18 @@
+{
+  "name": "copilot",
+  "version": "1.0.0",
+  "description": "",
+  "main": "extension.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@babel/generator": "^7.22.3",
+    "@babel/parser": "^7.22.4",
+    "@babel/traverse": "^7.22.4",
+    "@babel/types": "^7.22.4"
+  }
+}
