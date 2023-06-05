@@ -4,7 +4,7 @@ Object.defineProperty(exports, "__esModule", {
 exports.register = void 0;
 const r = require(66277);
 const i = require(27995);
-const o = require(89496);
+const vscode = require("vscode");
 let s;
 let a = new Set();
 exports.register = function () {
@@ -19,7 +19,7 @@ exports.register = function () {
   s = {
     listen: function (t) {
       const n = r.subscribe(e, t, !0);
-      return o.Disposable.from({
+      return vscode.Disposable.from({
         dispose: n
       });
     },

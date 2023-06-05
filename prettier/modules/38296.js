@@ -2,7 +2,7 @@ Object.defineProperty(exports, "__esModule", {
   value: !0
 });
 exports.CursorHistoryFiles = void 0;
-const r = require(21839);
+const utils2 = require("./utils2");
 const i = require(31451);
 exports.CursorHistoryFiles = class {
   constructor(e, t) {
@@ -24,11 +24,11 @@ exports.CursorHistoryFiles = class {
     let s = [];
     const a = new Map();
     if (t === i.NeighboringFileType.CursorMostRecent) {
-      s = await this.truncateDocs(r.cursorHistoryManager.sortedDocsByClickTime(), e.fsPath, n, o);
+      s = await this.truncateDocs(utils2.cursorHistoryManager.sortedDocsByClickTime(), e.fsPath, n, o);
       a.set(i.NeighboringFileType.CursorMostRecent, s.map(e => e.uri));
     } else {
       if (t === i.NeighboringFileType.CursorMostCount) {
-        s = await this.truncateDocs(r.cursorHistoryManager.sortedDocsByClickCount(), e.fsPath, n, o);
+        s = await this.truncateDocs(utils2.cursorHistoryManager.sortedDocsByClickCount(), e.fsPath, n, o);
         a.set(i.NeighboringFileType.CursorMostCount, s.map(e => e.uri));
       }
     }

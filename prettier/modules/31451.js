@@ -2,10 +2,10 @@ Object.defineProperty(exports, "__esModule", {
   value: !0
 });
 exports.NeighborSource = exports.considerNeighborFile = exports.NeighboringLanguageType = exports.NeighboringFileType = void 0;
-const r = require(84936);
+const commitfileresolver = require("./commit-file-resolver");
 const i = require(59189);
-const o = require(93136);
-const s = require(88560);
+const documentmanager = require("./document-manager");
+const workspacefilesystem = require("./workspace-file-system");
 const a = require(93480);
 const c = require(38296);
 const l = require(3488);
@@ -46,12 +46,12 @@ class NeighborSource {
       neighborSource: new Map()
     };
     if (void 0 === NeighborSource.instance) {
-      const t = e.get(o.TextDocumentManager);
+      const t = e.get(documentmanager.TextDocumentManager);
       if (d === p.WorkspaceSharingSameFolder || d === p.WorkspaceSmallestPathDist) {
-        const n = e.get(s.WorkspaceFileSystem);
+        const n = e.get(workspacefilesystem.WorkspaceFileSystem);
         NeighborSource.instance = new u.WorkspaceFiles(t, f, n);
       } else if (d == p.OpenTabsAndCocommitted) {
-        const n = e.get(r.CommitFileResolver);
+        const n = e.get(commitfileresolver.CommitFileResolver);
         NeighborSource.instance = new a.CoCommittedFiles(t, n);
       } else if (d === p.CursorMostCount || d === p.CursorMostRecent) {
         NeighborSource.instance = new c.CursorHistoryFiles(t, f);

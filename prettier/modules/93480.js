@@ -4,7 +4,7 @@ Object.defineProperty(exports, "__esModule", {
 exports.CoCommittedFiles = void 0;
 const r = require(17373);
 const i = require(43076);
-const o = require(21839);
+const utils2 = require("./utils2");
 const s = require(31451);
 class CoCommittedFiles {
   constructor(e, t) {
@@ -67,7 +67,7 @@ class CoCommittedFiles {
   async getNeighborFiles(e, t, n, r) {
     let i = [];
     const a = new Map();
-    i = await this.truncateDocs(o.sortByAccessTimes(this.docManager.textDocuments.filter(e => void 0 !== o.accessTimes.get(e.uri.toString()))), e.fsPath, n, r);
+    i = await this.truncateDocs(utils2.sortByAccessTimes(this.docManager.textDocuments.filter(e => void 0 !== utils2.accessTimes.get(e.uri.toString()))), e.fsPath, n, r);
     a.set(s.NeighboringFileType.OpenTabs, i.map(e => e.uri));
     if (i.length < r) {
       let o = this.cocommittedFilesCache(e.fsPath, t, n, r);

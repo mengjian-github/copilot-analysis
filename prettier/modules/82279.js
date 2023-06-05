@@ -4,9 +4,9 @@ Object.defineProperty(exports, "__esModule", {
 exports.postRequest = exports.Response = exports.isAbortError = exports.Fetcher = void 0;
 const r = require(79825);
 const i = require(73837);
-const o = require(51133);
+const config = require("./config");
 const s = require(94777);
-const a = require(6333);
+const telemetry = require("./telemetry");
 class Fetcher {
   set rejectUnauthorized(e) {
     this._rejectUnauthorized = e;
@@ -44,9 +44,9 @@ exports.postRequest = function (e, t, n, r, l, u, p) {
     Authorization: i.format("Bearer %s", n),
     "X-Request-Id": l,
     "Openai-Organization": "github-copilot",
-    "VScode-SessionId": e.get(o.EditorSession).sessionId,
-    "VScode-MachineId": e.get(o.EditorSession).machineId,
-    ...o.editorVersionHeaders(e)
+    "VScode-SessionId": e.get(config.EditorSession).sessionId,
+    "VScode-MachineId": e.get(config.EditorSession).machineId,
+    ...config.editorVersionHeaders(e)
   };
   e.get(s.HeaderContributors).contributeHeaders(d);
   if (r) {
@@ -62,7 +62,7 @@ exports.postRequest = function (e, t, n, r, l, u, p) {
   if (p) {
     const t = f.makeAbortController();
     p.onCancellationRequested(() => {
-      a.telemetry(e, "networking.cancelRequest", a.TelemetryData.createAndMarkAsIssued({
+      telemetry.telemetry(e, "networking.cancelRequest", telemetry.TelemetryData.createAndMarkAsIssued({
         headerRequestId: l
       }));
       t.abort();
@@ -71,7 +71,7 @@ exports.postRequest = function (e, t, n, r, l, u, p) {
   }
   return f.fetch(t, h).catch(n => {
     if ("ECONNRESET" == n.code || "ETIMEDOUT" == n.code || "ERR_HTTP2_INVALID_SESSION" == n.code || "ERR_HTTP2_GOAWAY_SESSION" == n.message) {
-      a.telemetry(e, "networking.disconnectAll");
+      telemetry.telemetry(e, "networking.disconnectAll");
       return f.disconnectAll().then(() => f.fetch(t, h));
     }
     throw n;

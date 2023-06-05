@@ -3,7 +3,7 @@ Object.defineProperty(exports, "__esModule", {
 });
 exports.decodeLocation = exports.encodeLocation = exports.completionContextForDocument = exports.CompletionContext = exports.completionTypeToString = exports.CompletionType = exports.CopilotPanelScheme = void 0;
 const r = require(17373);
-const i = require(16403);
+const locationfactory = require("./location-factory");
 var o;
 exports.CopilotPanelScheme = "copilot";
 (function (e) {
@@ -18,11 +18,11 @@ class CompletionContext {
     this.appendToCompletion = "";
     this.indentation = null;
     this.completionType = o.OPEN_COPILOT;
-    this.insertPosition = e.get(i.LocationFactory).position(t.line, t.character);
+    this.insertPosition = e.get(locationfactory.LocationFactory).position(t.line, t.character);
     this.completionType = n;
   }
   static fromJSONParse(e, t) {
-    const n = e.get(i.LocationFactory).position(t.insertPosition.line, t.insertPosition.character);
+    const n = e.get(locationfactory.LocationFactory).position(t.insertPosition.line, t.insertPosition.character);
     const r = new CompletionContext(e, n, t.completionType);
     r.prependToCompletion = t.prependToCompletion;
     r.appendToCompletion = t.appendToCompletion;

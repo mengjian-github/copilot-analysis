@@ -3,8 +3,8 @@ Object.defineProperty(exports, "__esModule", {
 });
 exports.logger = exports.toPlainText = exports.Logger = exports.MultiLog = exports.OutputChannelLog = exports.ConsoleLog = exports.LogTarget = exports.verboseLogging = exports.LogVerbose = exports.LogLevel = void 0;
 const r = require(10299);
-const i = require(51133);
-const o = require(6333);
+const config = require("./config");
+const telemetry = require("./telemetry");
 var s;
 !function (e) {
   e[e.DEBUG = 0] = "DEBUG";
@@ -81,12 +81,12 @@ class Logger {
     o.logIt(e, t, u, ...n);
   }
   sendErrorTelemetry(e, t, n, r) {
-    o.telemetryError(e, t, o.TelemetryData.createAndMarkAsIssued({
+    telemetry.telemetryError(e, t, telemetry.TelemetryData.createAndMarkAsIssued({
       context: this.context,
       level: s[s.ERROR],
       message: n
     }), !0);
-    o.telemetryError(e, t, o.TelemetryData.createAndMarkAsIssued({
+    telemetry.telemetryError(e, t, telemetry.TelemetryData.createAndMarkAsIssued({
       context: this.context,
       level: s[s.ERROR],
       message: r
@@ -97,10 +97,10 @@ class Logger {
   }
   shouldLog(e, t, n) {
     if (verboseLogging(e)) return !0;
-    const r = i.getConfig(e, i.ConfigKey.DebugFilterLogCategories);
+    const r = config.getConfig(e, config.ConfigKey.DebugFilterLogCategories);
     if (r.length > 0 && !r.includes(n)) return !1;
-    if (i.isProduction(e)) return t >= this.minLoggedLevel;
-    const o = i.getConfig(e, i.ConfigKey.DebugOverrideLogLevels);
+    if (config.isProduction(e)) return t >= this.minLoggedLevel;
+    const o = config.getConfig(e, config.ConfigKey.DebugOverrideLogLevels);
     return t >= (this.stringToLevel(o["*"]) ?? this.stringToLevel(o[this.context]) ?? this.minLoggedLevel);
   }
   debug(e, ...t) {
@@ -119,7 +119,7 @@ class Logger {
   exception(e, t, n) {
     const r = n ? `${n}: ` : "";
     const i = t instanceof Error ? t : new Error("Non-error thrown: " + t);
-    o.telemetryException(e, i, n ?? "Error");
+    telemetry.telemetryException(e, i, n ?? "Error");
     this.log(e, s.ERROR, `${r}(${i.constructor.name}) ${i.message}`);
   }
 }

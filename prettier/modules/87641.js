@@ -3,7 +3,7 @@ Object.defineProperty(exports, "__esModule", {
 });
 exports.registerPostInsertionListener = void 0;
 const r = require(38523);
-const i = require(89496);
+const vscode = require("vscode");
 const o = require(69636);
 const s = require(78179);
 const a = require(2135);
@@ -101,7 +101,7 @@ async function y(e) {
 exports.registerPostInsertionListener = function (e) {
   const t = e.get(o.PostInsertionNotifier);
   t.on("onPostInsertion", y);
-  return new i.Disposable(() => {
+  return new vscode.Disposable(() => {
     t.off("onPostInsertion", y);
   });
 };

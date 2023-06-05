@@ -4,6 +4,8 @@ const types = require("@babel/types");
 const traverse = require("@babel/traverse").default;
 const generate = require("@babel/generator").default;
 
+const NameMap = require('./name-map');
+
 const source = fs.readFileSync(
   "./vendor/github.copilot-1.88.132/dist/extension.js",
   "utf8"
@@ -109,12 +111,8 @@ function prettier(ast) {
 
         const ifStmt = types.ifStatement(
           test,
-          types.blockStatement([
-            types.expressionStatement(consequent),
-          ]),
-          types.blockStatement([
-            types.expressionStatement(alternate),
-          ])
+          types.blockStatement([types.expressionStatement(consequent)]),
+          types.blockStatement([types.expressionStatement(alternate)])
         );
         path.replaceWith(ifStmt);
         return;
@@ -127,9 +125,7 @@ function prettier(ast) {
 
         const ifStmt = types.ifStatement(
           test,
-          types.blockStatement([
-            types.expressionStatement(consequent),
-          ]),
+          types.blockStatement([types.expressionStatement(consequent)]),
           null
         );
         path.replaceWith(ifStmt);
@@ -179,6 +175,27 @@ function prettier(ast) {
   return ast;
 }
 
+function transformRequire(ast) {
+  const moduleTransformer = {
+    VariableDeclaration(path) {
+        if (path.node.declarations[0].init && path.node.declarations[0].init.type === "CallExpression") {
+            if (path.node.declarations[0].init.callee.name === "require") {
+                const moduleId = path.node.declarations[0].init.arguments[0].value;
+                if (NameMap[moduleId]) {
+                    const { name, path: modulePath} = NameMap[moduleId];
+
+                    path.node.declarations[0].init.arguments[0].value = '"'+modulePath+'"';
+                    path.scope.rename(path.node.declarations[0].id.name, name);
+                }
+              }
+        }
+      
+    },
+  };
+  traverse(ast, moduleTransformer);
+  return ast;
+}
+
 function parseModules() {
   traverse(ast, {
     enter(path) {
@@ -193,7 +210,7 @@ function parseModules() {
           const moduleSource = generate(moduleAst).code;
 
           try {
-            const ast = prettier(clearfyParams(moduleId, moduleSource));
+            const ast = transformRequire(prettier(clearfyParams(moduleId, moduleSource)));
 
             const mainBody = ast.program.body[0].expression.body.body;
             const moduleCode = generate(types.Program(mainBody)).code;

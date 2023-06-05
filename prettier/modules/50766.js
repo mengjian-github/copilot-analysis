@@ -2,10 +2,10 @@ Object.defineProperty(exports, "__esModule", {
   value: !0
 });
 exports.ComputationStatus = exports.getRepoUrlFromConfigText = exports.parseRepoUrl = exports.extractRepoInfoForTesting = exports.extractRepoInfoInBackground = exports.tryGetGitHubNWO = exports.getDogFood = exports.getUserKind = exports.isNotRepo = exports.isRepoInfo = void 0;
-const r = require(23055);
+const utils = require("./utils");
 const i = require(73458);
 const o = require(71017);
-const s = require(30362);
+const token = require("./token");
 const a = require(43076);
 function tryGetGitHubNWO(e) {
   if (void 0 !== e && e !== h.PENDING) return "github.com" === e.hostname ? e.owner + "/" + e.repo : void 0;
@@ -17,7 +17,7 @@ exports.isNotRepo = function (e) {
   return void 0 === e;
 };
 exports.getUserKind = async function (e) {
-  const t = (await e.get(s.CopilotTokenManager).getCopilotToken(e, !1)).organization_list ?? [];
+  const t = (await e.get(token.CopilotTokenManager).getCopilotToken(e, !1)).organization_list ?? [];
   return ["a5db0bcaae94032fe715fb34a5e4bce2", "7184f66dfcee98cb5f08a1cb936d5225", "4535c7beffc844b46bb1ed4aa04d759a"].find(e => t.includes(e)) ?? "";
 };
 exports.getDogFood = function (e) {
@@ -56,7 +56,7 @@ const l = function (e, t) {
 async function u(e, t) {
   const n = await async function (e, t) {
     let n = t + "_add_to_make_longer";
-    const i = e.get(r.FileSystem);
+    const i = e.get(utils.FileSystem);
     for (; t.length > 1 && t.length < n.length;) {
       const e = o.join(t, ".git", "config");
       let r = !1;
@@ -72,7 +72,7 @@ async function u(e, t) {
     }
   }(e, t);
   if (!n) return;
-  const i = e.get(r.FileSystem);
+  const i = e.get(utils.FileSystem);
   const s = o.join(n, ".git", "config");
   const a = getRepoUrlFromConfigText((await i.readFile(s)).toString()) ?? "";
   const c = parseRepoUrl(a);

@@ -2,7 +2,7 @@ Object.defineProperty(exports, "__esModule", {
   value: !0
 });
 exports.OpenTabFiles = void 0;
-const r = require(21839);
+const utils2 = require("./utils2");
 const i = require(31451);
 exports.OpenTabFiles = class {
   constructor(e, t) {
@@ -23,7 +23,7 @@ exports.OpenTabFiles = class {
   async getNeighborFiles(e, t, n, o) {
     let s = [];
     const a = new Map();
-    s = await this.truncateDocs(r.sortByAccessTimes(this.docManager.textDocuments), e.fsPath, n, o);
+    s = await this.truncateDocs(utils2.sortByAccessTimes(this.docManager.textDocuments), e.fsPath, n, o);
     a.set(i.NeighboringFileType.OpenTabs, s.map(e => e.uri));
     return {
       docs: s,

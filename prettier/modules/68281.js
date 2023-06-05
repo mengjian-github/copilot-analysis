@@ -3,9 +3,9 @@ Object.defineProperty(exports, "__esModule", {
 });
 exports.UserErrorNotifier = void 0;
 const r = require(1402);
-const i = require(29899);
-const o = require(41547);
-const s = require(47057);
+const logger = require("./logger");
+const notification = require("./notification");
+const realurlopener = require("./real-url-opener");
 const a = ["UNABLE_TO_VERIFY_LEAF_SIGNATURE", "CERT_SIGNATURE_FAILURE"];
 exports.UserErrorNotifier = class {
   constructor(e) {
@@ -23,7 +23,7 @@ exports.UserErrorNotifier = class {
   displayCertificateErrorNotification(e, t) {
     const n = "https://aka.ms/copilot-ssc";
     const r = this.certificateErrorMessage();
-    new i.Logger(i.LogLevel.ERROR, "certificates").error(e, `${r} Please visit ${n} to learn more. Original cause: ${JSON.stringify(t)}`);
+    new logger.Logger(logger.LogLevel.ERROR, "certificates").error(e, `${r} Please visit ${n} to learn more. Original cause: ${JSON.stringify(t)}`);
     this.showCertificateWarningMessage(e, r, n);
   }
   certificateErrorMessage() {
@@ -33,9 +33,9 @@ exports.UserErrorNotifier = class {
     const r = {
       title: "Learn more"
     };
-    e.get(o.NotificationSender).showWarningMessage(t, r).then(t => {
+    e.get(notification.NotificationSender).showWarningMessage(t, r).then(t => {
       if (t?.title === r.title) {
-        e.get(s.UrlOpener).open(n);
+        e.get(realurlopener.UrlOpener).open(n);
       }
     });
   }

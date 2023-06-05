@@ -2,13 +2,13 @@ Object.defineProperty(exports, "__esModule", {
   value: !0
 });
 exports.ExpConfigNone = exports.ExpConfigFromTAS = exports.ExpConfigMaker = void 0;
-const r = require(82279);
+const request = require("./request");
 const i = require(10219);
 class ExpConfigMaker {}
 exports.ExpConfigMaker = ExpConfigMaker;
 exports.ExpConfigFromTAS = class extends ExpConfigMaker {
   async fetchExperiments(e, t) {
-    const n = e.get(r.Fetcher);
+    const n = e.get(request.Fetcher);
     let o;
     try {
       o = await n.fetch("https://default.exp-tas.com/vscode/ab", {

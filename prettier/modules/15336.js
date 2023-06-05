@@ -2,15 +2,15 @@ Object.defineProperty(exports, "__esModule", {
   value: !0
 });
 exports.CannedResponseFetcher = exports.RecordingFetcher = exports.ErrorReturningFetcher = exports.SyntheticCompletions = exports.fetcherForTesting = void 0;
-const r = require(23055);
+const utils = require("./utils");
 const i = require(42600);
-const o = require(30362);
-const s = require(51133);
+const token = require("./token");
+const config = require("./config");
 const a = require(94969);
-const c = require(6333);
+const telemetry = require("./telemetry");
 const l = require(24419);
-function u(e, t, n, o = c.TelemetryData.createAndMarkAsIssued()) {
-  const s = r.getTokenizer();
+function u(e, t, n, o = telemetry.TelemetryData.createAndMarkAsIssued()) {
+  const s = utils.getTokenizer();
   return {
     completionText: n,
     meanLogProb: .5,
@@ -79,7 +79,7 @@ class SyntheticCompletions extends l.OpenAIFetcher {
     this._wasCalled = !1;
   }
   async fetchAndStreamCompletions(e, t, n, r, i, s, a) {
-    e.get(o.CopilotTokenManager).getCopilotToken(e);
+    e.get(token.CopilotTokenManager).getCopilotToken(e);
     return i?.isCancellationRequested ? {
       type: "canceled",
       reason: "canceled during test"
@@ -121,7 +121,7 @@ class CannedResponseFetcher {
     }
     const a = new Array(t.count).fill(o);
     const c = t?.postOptions?.extra?.language ?? "plaintext";
-    return (await e.get(s.BlockModeConfig).forLanguage(e, c)) == s.BlockMode.Parsing ? new SyntheticCompletions(a).fetchAndStreamCompletions(e, t, n, r, i) : this.inner.fetchAndStreamCompletions(e, {
+    return (await e.get(config.BlockModeConfig).forLanguage(e, c)) == config.BlockMode.Parsing ? new SyntheticCompletions(a).fetchAndStreamCompletions(e, t, n, r, i) : this.inner.fetchAndStreamCompletions(e, {
       ...t,
       postOptions: {
         ...t.postOptions,

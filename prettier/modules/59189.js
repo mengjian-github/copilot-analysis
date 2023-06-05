@@ -2,14 +2,14 @@ Object.defineProperty(exports, "__esModule", {
   value: !0
 });
 exports.Features = exports.Task = void 0;
-const r = require(23055);
+const utils = require("./utils");
 const i = require(10299);
 const o = require(43076);
-const s = require(51133);
+const config = require("./config");
 const a = require(77744);
 const c = require(31451);
 const l = require(10219);
-const u = require(69748);
+const abtest = require("./abtest");
 const p = require(38142);
 const d = require(29030);
 class h {
@@ -20,7 +20,7 @@ class h {
   async fetchExpConfig(e) {
     let t = this.cache.get(e.stringify());
     if (t) {
-      t = new Task(() => this.ctx.get(u.ExpConfigMaker).fetchExperiments(this.ctx, e.toHeaders()), 36e5);
+      t = new Task(() => this.ctx.get(abtest.ExpConfigMaker).fetchExperiments(this.ctx, e.toHeaders()), 36e5);
       this.cache.set(e.stringify(), t);
     }
     return t.run();
@@ -106,7 +106,7 @@ class Features {
   }
   getGranularityDirectory() {
     if (!this.granularityDirectory) {
-      const e = this.ctx.get(s.EditorSession).machineId;
+      const e = this.ctx.get(config.EditorSession).machineId;
       this.granularityDirectory = new d.GranularityDirectory(e, this.ctx.get(i.Clock));
     }
     return this.granularityDirectory;
@@ -276,7 +276,7 @@ class Features {
       [p.Filter.CopilotUserKind]: n,
       [p.Filter.CopilotDogfood]: r
     };
-    return s.getConfig(this.ctx, s.ConfigKey.DebugOverrideEngine) ? 0 : (await this.getAssignment(l.ExpTreatmentVariables.SuffixPercent, i)) ?? 15;
+    return config.getConfig(this.ctx, config.ConfigKey.DebugOverrideEngine) ? 0 : (await this.getAssignment(l.ExpTreatmentVariables.SuffixPercent, i)) ?? 15;
   }
   async suffixMatchThreshold({
     repoNwo: e,
@@ -320,14 +320,14 @@ class Features {
     };
     switch (await this.getAssignment(l.ExpTreatmentVariables.SuffixStartMode, o)) {
       case "cursor":
-        return r.SuffixStartMode.Cursor;
+        return utils.SuffixStartMode.Cursor;
       case "cursortrimstart":
       default:
-        return r.SuffixStartMode.CursorTrimStart;
+        return utils.SuffixStartMode.CursorTrimStart;
       case "siblingblock":
-        return r.SuffixStartMode.SiblingBlock;
+        return utils.SuffixStartMode.SiblingBlock;
       case "siblingblocktrimstart":
-        return r.SuffixStartMode.SiblingBlockTrimStart;
+        return utils.SuffixStartMode.SiblingBlockTrimStart;
     }
   }
   async tokenizerName({
@@ -340,12 +340,12 @@ class Features {
     };
     switch (await this.getAssignment(l.ExpTreatmentVariables.TokenizerName, n)) {
       case "cushman001":
-        return r.TokenizerName.cushman001;
+        return utils.TokenizerName.cushman001;
       case "cushman002":
       default:
-        return r.TokenizerName.cushman002;
+        return utils.TokenizerName.cushman002;
       case "mock":
-        return r.TokenizerName.mock;
+        return utils.TokenizerName.mock;
     }
   }
   async numberOfSnippets({
@@ -360,7 +360,7 @@ class Features {
       [p.Filter.CopilotUserKind]: n,
       [p.Filter.CopilotDogfood]: i
     };
-    return (await this.getAssignment(l.ExpTreatmentVariables.NumberOfSnippets, o)) ?? r.DEFAULT_NUM_OF_SNIPPETS;
+    return (await this.getAssignment(l.ExpTreatmentVariables.NumberOfSnippets, o)) ?? utils.DEFAULT_NUM_OF_SNIPPETS;
   }
   async snippetPercent({
     repoNwo: e,
@@ -390,22 +390,22 @@ class Features {
     };
     switch (await this.getAssignment(l.ExpTreatmentVariables.NeighboringTabsOption, o)) {
       case "none":
-        return r.NeighboringTabsOption.None;
+        return utils.NeighboringTabsOption.None;
       case "conservative":
-        return r.NeighboringTabsOption.Conservative;
+        return utils.NeighboringTabsOption.Conservative;
       case "medium":
-        return r.NeighboringTabsOption.Medium;
+        return utils.NeighboringTabsOption.Medium;
       case "eager":
       default:
-        return r.NeighboringTabsOption.Eager;
+        return utils.NeighboringTabsOption.Eager;
       case "eagerbutlittle":
-        return r.NeighboringTabsOption.EagerButLittle;
+        return utils.NeighboringTabsOption.EagerButLittle;
       case "eagerbutmedium":
-        return r.NeighboringTabsOption.EagerButMedium;
+        return utils.NeighboringTabsOption.EagerButMedium;
       case "eagerbutmuch":
-        return r.NeighboringTabsOption.EagerButMuch;
+        return utils.NeighboringTabsOption.EagerButMuch;
       case "retrievalcomparable":
-        return r.NeighboringTabsOption.RetrievalComparable;
+        return utils.NeighboringTabsOption.RetrievalComparable;
     }
   }
   async neighboringSnippetTypes({
@@ -422,12 +422,12 @@ class Features {
     };
     switch (await this.getAssignment(l.ExpTreatmentVariables.NeighboringSnippetTypes, o)) {
       case "function":
-        return r.NeighboringSnippetType.NeighboringFunctions;
+        return utils.NeighboringSnippetType.NeighboringFunctions;
       case "snippet":
       default:
-        return r.NeighboringSnippetType.NeighboringSnippets;
+        return utils.NeighboringSnippetType.NeighboringSnippets;
       case "cursor":
-        return r.NeighboringSnippetType.CursorHistoryMatcher;
+        return utils.NeighboringSnippetType.CursorHistoryMatcher;
     }
   }
   async neighboringFileType({
@@ -487,11 +487,11 @@ class Features {
     };
     switch (await this.getAssignment(l.ExpTreatmentVariables.CursorSnippetsPickingStrategy, o)) {
       case "cursoronly":
-        return r.CursorSnippetsPickingStrategy.CursorOnly;
+        return utils.CursorSnippetsPickingStrategy.CursorOnly;
       case "jaccardcursor":
-        return r.CursorSnippetsPickingStrategy.JaccardCursor;
+        return utils.CursorSnippetsPickingStrategy.JaccardCursor;
       default:
-        return r.CursorSnippetsPickingStrategy.CursorJaccard;
+        return utils.CursorSnippetsPickingStrategy.CursorJaccard;
     }
   }
   async retrievalStrategy({

@@ -7,8 +7,8 @@ const i = require(57147);
 const o = require(22037);
 const s = require(71017);
 const a = require(1402);
-const c = require(29899);
-const l = new c.Logger(c.LogLevel.WARN, "certificates");
+const logger = require("./logger");
+const l = new logger.Logger(logger.LogLevel.WARN, "certificates");
 class RootCertificateReader {}
 exports.RootCertificateReader = RootCertificateReader;
 const p = new Map();

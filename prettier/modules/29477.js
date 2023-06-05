@@ -4,9 +4,9 @@ Object.defineProperty(exports, "__esModule", {
 exports.initProxyEnvironment = void 0;
 const r = require(41808);
 const i = require(57310);
-const o = require(89496);
+const vscode = require("vscode");
 exports.initProxyEnvironment = function (e, t) {
-  o.workspace.onDidChangeConfiguration(n => {
+  vscode.workspace.onDidChangeConfiguration(n => {
     const r = n.affectsConfiguration("http.proxy");
     if (n.affectsConfiguration("http.proxyStrictSSL") || n.affectsConfiguration("http.proxyAuthorization") || r) {
       s(e, t, r);
@@ -15,13 +15,13 @@ exports.initProxyEnvironment = function (e, t) {
   s(e, t);
 };
 const s = (e, t, n) => {
-  let s = o.workspace.getConfiguration("http").get("proxy") || function (e) {
+  let s = vscode.workspace.getConfiguration("http").get("proxy") || function (e) {
     return e.HTTPS_PROXY || e.https_proxy || e.HTTP_PROXY || e.http_proxy || null;
   }(t);
   if (s) {
     const t = {};
-    const n = o.workspace.getConfiguration("http").get("proxyAuthorization");
-    const a = o.workspace.getConfiguration("http").get("proxyStrictSSL", !0);
+    const n = vscode.workspace.getConfiguration("http").get("proxyAuthorization");
+    const a = vscode.workspace.getConfiguration("http").get("proxyStrictSSL", !0);
     if (n) {
       t["Proxy-Authorization"] = n;
     }

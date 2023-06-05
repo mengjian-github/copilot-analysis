@@ -2,19 +2,19 @@ Object.defineProperty(exports, "__esModule", {
   value: !0
 });
 exports.checkFileOnLoad = exports.registerCopilotIgnore = void 0;
-const r = require(89496);
+const vscode = require("vscode");
 const i = require(1402);
 const o = require(25112);
 const s = require(54913);
-const a = require(60070);
+const env = require("./env");
 async function c(e) {
-  return await r.workspace.fs.readFile(e).then(e => e.toString());
+  return await vscode.workspace.fs.readFile(e).then(e => e.toString());
 }
 exports.registerCopilotIgnore = async function (e) {
   const t = [];
   const n = new s.CopilotIgnoreManager(e);
   async function l() {
-    const e = await r.workspace.findFiles(`**/${o.COPILOT_IGNORE_FILE}`);
+    const e = await vscode.workspace.findFiles(`**/${o.COPILOT_IGNORE_FILE}`);
     for (const [t, r] of await async function (e) {
       const t = [];
       for (const n of e) t.push(c(n).then(e => [n, e]));
@@ -22,10 +22,10 @@ exports.registerCopilotIgnore = async function (e) {
     }(e)) n.onDidIgnorePatternCreate(t, r);
   }
   e.forceSet(s.CopilotIgnoreManager, n);
-  if (r.workspace.workspaceFolders) {
+  if (vscode.workspace.workspaceFolders) {
     await l();
   }
-  if (a.isRunningInTest(e)) {
+  if (env.isRunningInTest(e)) {
     n.enabled(!0);
   } else {
     t.push(function (e, t) {
@@ -41,28 +41,28 @@ exports.registerCopilotIgnore = async function (e) {
       };
     }(e, n));
   }
-  t.push(r.workspace.onDidChangeWorkspaceFolders(e => {
+  t.push(vscode.workspace.onDidChangeWorkspaceFolders(e => {
     for (const t of e.removed) n.onDidWorkspaceRemove(t.uri);
     return l();
   }));
-  t.push(r.workspace.onDidOpenTextDocument(e => n.onDidOpenTextDocument(e?.uri)), r.window.onDidChangeActiveTextEditor(e => n.onDidOpenTextDocument(e?.document?.uri)));
-  t.push(r.workspace.onDidSaveTextDocument(async e => {
+  t.push(vscode.workspace.onDidOpenTextDocument(e => n.onDidOpenTextDocument(e?.uri)), vscode.window.onDidChangeActiveTextEditor(e => n.onDidOpenTextDocument(e?.document?.uri)));
+  t.push(vscode.workspace.onDidSaveTextDocument(async e => {
     if (n.isCopilotIgnoreFile(e.uri)) {
       const t = await c(e.uri);
       n.onDidIgnorePatternCreate(e.uri, t);
     }
-  }), r.workspace.onDidDeleteFiles(e => {
+  }), vscode.workspace.onDidDeleteFiles(e => {
     for (const t of e.files) n.onDidIgnorePatternDelete(t);
-  }), r.workspace.onDidRenameFiles(async e => {
+  }), vscode.workspace.onDidRenameFiles(async e => {
     for (const t of e.files) if (n.isCopilotIgnoreFile(t.newUri)) {
       const e = await c(t.newUri);
       n.onDidIgnorePatternMove(t.oldUri, t.newUri, e);
     }
   }));
-  return r.Disposable.from(...t);
+  return vscode.Disposable.from(...t);
 };
 exports.checkFileOnLoad = async function (e) {
-  if (r.window?.activeTextEditor) {
-    e.get(s.CopilotIgnoreManager).setIgnoredStatus(r.window.activeTextEditor.document?.uri);
+  if (vscode.window?.activeTextEditor) {
+    e.get(s.CopilotIgnoreManager).setIgnoredStatus(vscode.window.activeTextEditor.document?.uri);
   }
 };

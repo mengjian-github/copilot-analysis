@@ -25,7 +25,7 @@ Object.defineProperty(exports, "__esModule", {
 });
 exports.NoOPCopilotIgnoreManager = exports.CopilotIgnoreManager = void 0;
 const a = require(25112);
-const c = require(86722);
+const reporter = require("./status-reporter");
 class CopilotIgnoreManager {
   constructor(e) {
     this.ctx = e;
@@ -62,7 +62,7 @@ class CopilotIgnoreManager {
   }
   setIgnoredStatus(e) {
     if (!e || "file" !== e?.scheme) return;
-    const t = this.ctx.get(c.StatusReporter);
+    const t = this.ctx.get(reporter.StatusReporter);
     if (s(this, r, "f").isIgnored(e)) {
       t.setInactive("Copilot is ignoring this file as per the .copilotignore settings");
     } else {

@@ -2,11 +2,11 @@ Object.defineProperty(exports, "__esModule", {
   value: !0
 });
 exports.CopilotStatusBar = void 0;
-const r = require(89496);
+const vscode = require("vscode");
 const i = require(70106);
-const o = require(51133);
-const s = require(6333);
-const a = require(73060);
+const config = require("./config");
+const telemetry = require("./telemetry");
+const consts = require("./const");
 exports.CopilotStatusBar = class {
   constructor(e, t) {
     this.ctx = e;
@@ -14,25 +14,25 @@ exports.CopilotStatusBar = class {
     this.showingMessage = !1;
     this.status = "Normal";
     this.errorMessage = "";
-    this.disabledColor = new r.ThemeColor("statusBarItem.warningBackground");
+    this.disabledColor = new vscode.ThemeColor("statusBarItem.warningBackground");
     this.delayedUpdateDisplay = i.debounce(100, () => {
       this.updateDisplay();
     });
     this.enabled = this.checkEnabledForLanguage();
-    this.item = r.window.createStatusBarItem("status", r.StatusBarAlignment.Right, 1);
+    this.item = vscode.window.createStatusBarItem("status", vscode.StatusBarAlignment.Right, 1);
     this.item.name = "Copilot Status";
     this.updateDisplay();
     this.item.show();
-    r.window.onDidChangeActiveTextEditor(() => {
+    vscode.window.onDidChangeActiveTextEditor(() => {
       this.updateStatusBarIndicator();
     });
-    r.workspace.onDidCloseTextDocument(() => {
-      if (r.window.activeTextEditor || "Inactive" !== this.status) {
+    vscode.workspace.onDidCloseTextDocument(() => {
+      if (vscode.window.activeTextEditor || "Inactive" !== this.status) {
         this.status = "Normal";
       }
       this.updateStatusBarIndicator();
     });
-    r.workspace.onDidOpenTextDocument(() => {
+    vscode.workspace.onDidOpenTextDocument(() => {
       this.updateStatusBarIndicator();
     });
   }
@@ -41,18 +41,18 @@ exports.CopilotStatusBar = class {
     this.updateDisplay();
   }
   checkEnabledForLanguage() {
-    return o.getEnabledConfig(this.ctx) || !1;
+    return config.getEnabledConfig(this.ctx) || !1;
   }
   updateDisplay() {
     switch (this.status) {
       case "Error":
         this.item.text = "$(copilot-notconnected)";
-        this.item.command = a.CMDShowErrorMessage;
+        this.item.command = consts.CMDShowErrorMessage;
         this.item.tooltip = "Copilot error (click for details)";
         break;
       case "Warning":
         this.item.text = "$(copilot-warning)";
-        this.item.command = this.errorMessage ? a.CMDShowErrorMessage : void 0;
+        this.item.command = this.errorMessage ? consts.CMDShowErrorMessage : void 0;
         this.item.tooltip = "Copilot is encountering temporary issues (click for details)";
         break;
       case "InProgress":
@@ -64,7 +64,7 @@ exports.CopilotStatusBar = class {
         break;
       case "Normal":
         this.item.text = "$(copilot-logo)";
-        this.item.command = a.CMDToggleCopilot;
+        this.item.command = consts.CMDToggleCopilot;
         this.item.tooltip = this.enabled ? "Deactivate Copilot" : "Activate Copilot";
         this.item.backgroundColor = this.enabled ? void 0 : this.disabledColor;
     }
@@ -113,15 +113,15 @@ exports.CopilotStatusBar = class {
     this.updateDisplay();
   }
   toggleStatusBar() {
-    const e = this.ctx.get(o.ConfigProvider);
+    const e = this.ctx.get(config.ConfigProvider);
     const t = this.enabled;
-    const n = r.window.activeTextEditor?.document.languageId;
+    const n = vscode.window.activeTextEditor?.document.languageId;
     const i = "editor.action.inlineSuggest.hide";
     if (this.showingMessage) return;
-    const a = s.TelemetryData.createAndMarkAsIssued({
+    const a = telemetry.TelemetryData.createAndMarkAsIssued({
       languageId: n || "*"
     });
-    if (o.getEnabledConfig(this.ctx, "*") == o.getEnabledConfig(this.ctx, n)) {
+    if (config.getEnabledConfig(this.ctx, "*") == config.getEnabledConfig(this.ctx, n)) {
       this.showingMessage = !0;
       setTimeout(() => {
         this.showingMessage = !1;
@@ -129,13 +129,13 @@ exports.CopilotStatusBar = class {
       const o = t ? "Disable" : "Enable";
       const c = `${o} Globally`;
       const l = n ? [c, `${o} for ${n}`] : [c];
-      r.window.showInformationMessage(`Would you like to ${t ? "disable" : "enable"} Copilot?`, ...l).then(o => {
+      vscode.window.showInformationMessage(`Would you like to ${t ? "disable" : "enable"} Copilot?`, ...l).then(o => {
         const l = o === c;
         this.showingMessage = !1;
-        if (void 0 === o) return void (0, s.telemetry)(this.ctx, "statusBar.cancelToggle");
-        s.telemetry(this.ctx, "statusBar" + (l ? ".global" : ".language") + (t ? "Off" : "On"), a);
+        if (void 0 === o) return void (0, telemetry.telemetry)(this.ctx, "statusBar.cancelToggle");
+        telemetry.telemetry(this.ctx, "statusBar" + (l ? ".global" : ".language") + (t ? "Off" : "On"), a);
         if (t) {
-          r.commands.executeCommand(i);
+          vscode.commands.executeCommand(i);
         }
         const u = l ? "*" : n;
         e.updateEnabledConfig(this.ctx, u, !t).then(() => {
@@ -144,9 +144,9 @@ exports.CopilotStatusBar = class {
         });
       });
     } else {
-      s.telemetry(this.ctx, "statusBar.language" + (t ? "Off" : "On"), a);
+      telemetry.telemetry(this.ctx, "statusBar.language" + (t ? "Off" : "On"), a);
       if (t) {
-        r.commands.executeCommand(i);
+        vscode.commands.executeCommand(i);
       }
       e.updateEnabledConfig(this.ctx, n || "*", !t).then(() => {
         this.enabled = !t;
@@ -163,7 +163,7 @@ exports.CopilotStatusBar = class {
     if (this.errorRetry) {
       t.push("Retry");
     }
-    r.window.showWarningMessage(this.errorMessage, ...t).then(t => {
+    vscode.window.showWarningMessage(this.errorMessage, ...t).then(t => {
       this.showingMessage = !1;
       if (t === e) {
         this.outputChannel.show();

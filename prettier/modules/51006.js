@@ -2,9 +2,9 @@ Object.defineProperty(exports, "__esModule", {
   value: !0
 });
 exports.ghostTextScoreQuantile = exports.ghostTextScoreConfidence = void 0;
-const r = require(29899);
+const logger = require("./logger");
 const i = require(37481);
-const o = (new r.Logger(r.LogLevel.INFO, "restraint"), {
+const o = (new logger.Logger(logger.LogLevel.INFO, "restraint"), {
   link: e => Math.exp(e) / (1 + Math.exp(e)),
   unlink: e => Math.log(e / (1 - e))
 });

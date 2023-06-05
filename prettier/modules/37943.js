@@ -3,7 +3,7 @@ Object.defineProperty(exports, "__esModule", {
 });
 exports.register = void 0;
 const r = require(66277);
-const i = require(82279);
+const request = require("./request");
 const o = require(77032);
 const s = Math.log(256) / Math.log(2) / 2;
 const a = r.proxy({
@@ -52,7 +52,7 @@ exports.register = function () {
           var r;
           await (r = t, new Promise(e => setTimeout(e, r)));
           u(!1);
-          const c = e.get(i.Fetcher);
+          const c = e.get(request.Fetcher);
           await async function e(t, r) {
             setTimeout(async () => {
               a.retryAttempts = Math.min(a.retryAttempts + 1, s);

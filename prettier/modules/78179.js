@@ -11,27 +11,27 @@ Object.defineProperty(exports, "__esModule", {
   value: !0
 });
 exports.registerCodeQuoteStatusReporter = exports.CodeQuoteStatusReporter = void 0;
-const c = require(89496);
-const l = require(86722);
+const vscode = require("vscode");
+const reporter = require("./status-reporter");
 const u = require(91465);
 const p = require(32064);
 const d = require(47302);
 const h = require(56437);
 const f = "codeQuoteStatusReporter.showMatchList";
 const m = "View all matches for this file";
-class CodeQuoteStatusReporter extends l.StatusReporter {
+class CodeQuoteStatusReporter extends reporter.StatusReporter {
   constructor(e) {
     super();
     this.ctx = e;
     this.status = "Normal";
-    this.warningColor = new c.ThemeColor("statusBarItem.warningBackground");
-    this.errorColor = new c.ThemeColor("statusBarItem.errorBackground");
-    this.baseColor = new c.ThemeColor("statusBarItem.background");
+    this.warningColor = new vscode.ThemeColor("statusBarItem.warningBackground");
+    this.errorColor = new vscode.ThemeColor("statusBarItem.errorBackground");
+    this.baseColor = new vscode.ThemeColor("statusBarItem.background");
     this.subscriptions = [];
     this.showingMessage = !1;
     this.progress = null;
     r.set(this, () => {
-      c.commands.executeCommand(u.MatchPanelCommand);
+      vscode.commands.executeCommand(u.MatchPanelCommand);
     });
     i.set(this, e => {
       const t = d.MatchState.getEditorRefSnapshot(p.getDocumentFilename(e?.document));
@@ -44,8 +44,8 @@ class CodeQuoteStatusReporter extends l.StatusReporter {
     s.set(this, e => {
       this.item.backgroundColor = e;
     });
-    this.subscriptions.push(c.commands.registerCommand(f, a(this, r, "f")));
-    this.item = c.window.createStatusBarItem("codequote", c.StatusBarAlignment.Right, 0);
+    this.subscriptions.push(vscode.commands.registerCommand(f, a(this, r, "f")));
+    this.item = vscode.window.createStatusBarItem("codequote", vscode.StatusBarAlignment.Right, 0);
     this.item.name = "Copilot CodeQuote";
     this.item.command = f;
     this.subscriptions.push(d.ConnectionState.listen(() => {
@@ -67,12 +67,12 @@ class CodeQuoteStatusReporter extends l.StatusReporter {
     this.subscriptions.push(d.MatchState.listen(() => {
       a(this, i, "f").call(this, p.getActiveEditor());
     }));
-    this.subscriptions.push(c.window.onDidChangeActiveTextEditor(e => {
+    this.subscriptions.push(vscode.window.onDidChangeActiveTextEditor(e => {
       a(this, i, "f").call(this, e);
     }));
   }
   dispose() {
-    c.Disposable.from(...this.subscriptions).dispose();
+    vscode.Disposable.from(...this.subscriptions).dispose();
   }
   updateItem(e) {
     const t = e ? "Matches found" : "No Matches";
@@ -84,8 +84,8 @@ class CodeQuoteStatusReporter extends l.StatusReporter {
   }
   setProgress() {
     if (this.progress) {
-      this.progress = c.window.withProgress({
-        location: c.ProgressLocation.Notification,
+      this.progress = vscode.window.withProgress({
+        location: vscode.ProgressLocation.Notification,
         title: "Reconnecting to CodeQuote"
       }, e => new Promise(t => {
         const n = d.ConnectionState.listen(() => {
@@ -114,7 +114,7 @@ class CodeQuoteStatusReporter extends l.StatusReporter {
   setError(e) {
     if (this.showingMessage) {
       this.showingMessage = !0;
-      c.window.showErrorMessage(e).then(() => {
+      vscode.window.showErrorMessage(e).then(() => {
         this.showingMessage = !1;
       });
     }
@@ -122,14 +122,14 @@ class CodeQuoteStatusReporter extends l.StatusReporter {
   setNormal(e) {
     if (e) {
       this.forceNormal();
-      c.window.showInformationMessage(e);
+      vscode.window.showInformationMessage(e);
     }
   }
   setInactive() {}
   setWarning(e) {
     if (e) {
       this.status = "Warning";
-      c.window.showWarningMessage(e, m).then(e => {
+      vscode.window.showWarningMessage(e, m).then(e => {
         const t = {
           context: this.ctx,
           actor: "user"
@@ -137,7 +137,7 @@ class CodeQuoteStatusReporter extends l.StatusReporter {
         switch (e) {
           case m:
             h.matchNotificationTelemetry.handleDoAction(t);
-            c.commands.executeCommand(u.MatchPanelCommand);
+            vscode.commands.executeCommand(u.MatchPanelCommand);
             break;
           case void 0:
             h.matchNotificationTelemetry.handleDismiss(t);

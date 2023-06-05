@@ -5,7 +5,7 @@ exports.WorkspaceFiles = void 0;
 const r = require(71017);
 const i = require(17373);
 const o = require(43076);
-const s = require(21839);
+const utils2 = require("./utils2");
 const a = require(49674);
 const c = require(31451);
 class WorkspaceFiles {
@@ -94,7 +94,7 @@ class WorkspaceFiles {
   async getNeighborFiles(e, t, n, r) {
     let i = [];
     const o = new Map();
-    i = await this.truncateDocs(s.sortByAccessTimes(this.docManager.textDocuments.filter(e => void 0 !== s.accessTimes.get(e.uri.toString()))), e.fsPath, n, r);
+    i = await this.truncateDocs(utils2.sortByAccessTimes(this.docManager.textDocuments.filter(e => void 0 !== utils2.accessTimes.get(e.uri.toString()))), e.fsPath, n, r);
     o.set(c.NeighboringFileType.OpenTabs, i.map(e => e.uri));
     if (i.length < r) {
       let s = this.workspaceFilesCache(e.fsPath, t, n, r, i);

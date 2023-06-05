@@ -29,7 +29,7 @@ Object.defineProperty(exports, "__esModule", {
   value: !0
 });
 exports.registerMatchPanel = exports.MatchPanel = void 0;
-const d = require(89496);
+const vscode = require("vscode");
 const h = require(91465);
 const f = require(32064);
 const m = require(47302);
@@ -41,9 +41,9 @@ function b(e) {
   return !_.includes(e.uri.scheme);
 }
 async function E(e) {
-  return await d.commands.executeCommand("markdown.api.render", e);
+  return await vscode.commands.executeCommand("markdown.api.render", e);
 }
-class w extends d.EventEmitter {
+class w extends vscode.EventEmitter {
   constructor() {
     super(...arguments);
     r.set(this, void 0);
@@ -58,8 +58,8 @@ class w extends d.EventEmitter {
   }
   create(e) {
     if (u(this, r, "f")) return;
-    p(this, r, d.window.createWebviewPanel("codequoteMatchesPreview", `${h.CodeQuoteFeatureName} Public Code Matches`, {
-      viewColumn: d.ViewColumn.Beside,
+    p(this, r, vscode.window.createWebviewPanel("codequoteMatchesPreview", `${h.CodeQuoteFeatureName} Public Code Matches`, {
+      viewColumn: vscode.ViewColumn.Beside,
       preserveFocus: !0
     }, {
       enableScripts: !1,
@@ -142,7 +142,7 @@ class MatchPanel {
       }
     });
     this.panel = new w();
-    this.subscriptions = [d.Disposable.from(m.MatchState.listen(u(this, l, "f")), this.panel.event(u(this, o, "f")), d.window.onDidChangeActiveTextEditor(u(this, s, "f")), d.workspace.onDidCloseTextDocument(u(this, a, "f")))];
+    this.subscriptions = [vscode.Disposable.from(m.MatchState.listen(u(this, l, "f")), this.panel.event(u(this, o, "f")), vscode.window.onDidChangeActiveTextEditor(u(this, s, "f")), vscode.workspace.onDidCloseTextDocument(u(this, a, "f")))];
   }
   async create() {
     const e = f.getActiveEditor();
@@ -157,7 +157,7 @@ class MatchPanel {
   }
   dispose() {
     this.panel?.dispose();
-    d.Disposable.from(...this.subscriptions).dispose();
+    vscode.Disposable.from(...this.subscriptions).dispose();
   }
   provideContent() {
     const e = f.getDocumentFilename(this.document);
@@ -173,7 +173,7 @@ c = new WeakMap();
 l = new WeakMap();
 exports.registerMatchPanel = function (e) {
   const t = new MatchPanel(e);
-  t.subscriptions.push(d.commands.registerCommand(h.MatchPanelCommand, function () {
+  t.subscriptions.push(vscode.commands.registerCommand(h.MatchPanelCommand, function () {
     t.create();
   }));
   return t;

@@ -2,9 +2,9 @@ Object.defineProperty(exports, "__esModule", {
   value: !0
 });
 exports.getDocumentFilename = exports.getActiveEditorFilename = exports.getActiveEditor = void 0;
-const r = require(89496);
+const vscode = require("vscode");
 function getActiveEditor() {
-  return r.window.activeTextEditor;
+  return vscode.window.activeTextEditor;
 }
 function getDocumentFilename(e) {
   return e?.uri.fsPath ?? "";

@@ -2,21 +2,21 @@ Object.defineProperty(exports, "__esModule", {
   value: !0
 });
 exports.indentationBlockFinished = exports.completionCutOrContinue = exports.contextIndentationFromText = exports.contextIndentation = exports.getNodeStart = exports.isBlockBodyFinished = exports.isEmptyBlockStart = void 0;
-const r = require(16403);
-const i = require(82533);
+const locationfactory = require("./location-factory");
+const promptlibproxy = require("./prompt-lib-proxy");
 exports.isEmptyBlockStart = function (e, t) {
-  return i.isEmptyBlockStart(e.languageId, e.getText(), e.offsetAt(t));
+  return promptlibproxy.isEmptyBlockStart(e.languageId, e.getText(), e.offsetAt(t));
 };
 exports.isBlockBodyFinished = function (e, t, n, o) {
-  const s = e.get(r.LocationFactory);
+  const s = e.get(locationfactory.LocationFactory);
   const a = t.getText(s.range(s.position(0, 0), n));
   const c = t.offsetAt(n);
-  return i.isBlockBodyFinished(t.languageId, a, o, c);
+  return promptlibproxy.isBlockBodyFinished(t.languageId, a, o, c);
 };
 exports.getNodeStart = async function (e, t, n, o) {
-  const s = e.get(r.LocationFactory);
+  const s = e.get(locationfactory.LocationFactory);
   const a = t.getText(s.range(s.position(0, 0), n)) + o;
-  const c = await i.getNodeStart(t.languageId, a, t.offsetAt(n));
+  const c = await promptlibproxy.getNodeStart(t.languageId, a, t.offsetAt(n));
   if (c) return t.positionAt(c);
 };
 const o = ["\\{", "\\}", "\\[", "\\]", "\\(", "\\)"].concat(["then", "else", "elseif", "elif", "catch", "finally", "fi", "done", "end", "loop", "until", "where", "when"].map(e => e + "\\b"));

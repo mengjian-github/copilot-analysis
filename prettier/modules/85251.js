@@ -2,11 +2,11 @@ Object.defineProperty(exports, "__esModule", {
   value: !0
 });
 exports.setupExperimentationService = exports.EditorExperimentFilters = exports.logger = void 0;
-const r = require(51133);
-const i = require(29899);
+const config = require("./config");
+const logger = require("./logger");
 const o = require(59189);
 const s = require(38142);
-exports.logger = new i.Logger(i.LogLevel.INFO, "Exp");
+exports.logger = new logger.Logger(logger.LogLevel.INFO, "Exp");
 class EditorExperimentFilters {}
 function c(e) {
   return e.split("-")[0];
@@ -16,9 +16,9 @@ exports.setupExperimentationService = function (e) {
   const t = e.get(o.Features);
   t.registerStaticFilters(function (e) {
     const t = function (e) {
-      const t = e.get(r.BuildInfo);
-      const n = e.get(r.EditorAndPluginInfo).getEditorInfo();
-      const i = e.get(r.EditorSession);
+      const t = e.get(config.BuildInfo);
+      const n = e.get(config.EditorAndPluginInfo).getEditorInfo();
+      const i = e.get(config.EditorSession);
       return {
         [s.Filter.ApplicationVersion]: c(n.version),
         [s.Filter.ClientId]: i.machineId,
@@ -32,5 +32,5 @@ exports.setupExperimentationService = function (e) {
       ...e.get(EditorExperimentFilters).addEditorSpecificFilters()
     };
   }(e));
-  t.registerDynamicFilter(s.Filter.CopilotOverrideEngine, () => r.getConfig(e, r.ConfigKey.DebugOverrideEngine));
+  t.registerDynamicFilter(s.Filter.CopilotOverrideEngine, () => config.getConfig(e, config.ConfigKey.DebugOverrideEngine));
 };

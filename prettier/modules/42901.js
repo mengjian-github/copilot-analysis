@@ -3,10 +3,10 @@ Object.defineProperty(exports, "__esModule", {
 });
 exports.convertToAPIJsonData = exports.prepareSolutionForReturn = exports.SSEProcessor = exports.splitChunk = void 0;
 const r = require(59189);
-const i = require(29899);
-const o = require(6333);
+const logger = require("./logger");
+const telemetry = require("./telemetry");
 const s = require(40937);
-const a = new i.Logger(i.LogLevel.INFO, "streamChoices");
+const a = new logger.Logger(logger.LogLevel.INFO, "streamChoices");
 class c {
   constructor() {
     this.logprobs = [];
@@ -107,7 +107,7 @@ class SSEProcessor {
             if ((n.finish_reason || l) && (s = await e(i.text.join("")), this.maybeCancel("after awaiting finishedCb"))) return;
             if (!n.finish_reason && void 0 === s) continue;
             const u = n.finish_reason ?? "client-trimmed";
-            o.telemetry(this.ctx, "completion.finishReason", this.telemetryData.extendedBy({
+            telemetry.telemetry(this.ctx, "completion.finishReason", this.telemetryData.extendedBy({
               completionChoiceFinishReason: u
             }));
             if (this.dropCompletionReasons.includes(n.finish_reason)) {

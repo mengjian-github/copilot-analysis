@@ -2,15 +2,15 @@ Object.defineProperty(exports, "__esModule", {
   value: !0
 });
 exports.checkSuffix = exports.postProcessChoice = void 0;
-const r = require(82533);
-const i = require(6333);
-const o = require(60070);
+const promptlibproxy = require("./prompt-lib-proxy");
+const telemetry = require("./telemetry");
+const env = require("./env");
 const s = require(29657);
 exports.postProcessChoice = async function (e, t, n, a, c, l, u) {
   if (s.isRepetitive(c.tokens)) {
-    const t = i.TelemetryData.createAndMarkAsIssued();
+    const t = telemetry.TelemetryData.createAndMarkAsIssued();
     t.extendWithRequestId(c.requestId);
-    i.telemetry(e, "repetition.detected", t, !0);
+    telemetry.telemetry(e, "repetition.detected", t, !0);
     return void u.info(e, "Filtered out repetitive solution");
   }
   const p = {
@@ -26,10 +26,10 @@ exports.postProcessChoice = async function (e, t, n, a, c, l, u) {
     }
     return !1;
   }(n, a, p.completionText)) {
-    const t = i.TelemetryData.createAndMarkAsIssued();
+    const t = telemetry.TelemetryData.createAndMarkAsIssued();
     t.extendWithRequestId(c.requestId);
-    i.telemetry(e, "completion.alreadyInDocument", t);
-    i.telemetry(e, "completion.alreadyInDocument", t.extendedBy({
+    telemetry.telemetry(e, "completion.alreadyInDocument", t);
+    telemetry.telemetry(e, "completion.alreadyInDocument", t.extendedBy({
       completionTextJson: JSON.stringify(p.completionText)
     }), !0);
     return void u.info(e, "Filtered out solution matching next line");
@@ -38,7 +38,7 @@ exports.postProcessChoice = async function (e, t, n, a, c, l, u) {
     if ("" === i) return i;
     let a = "}";
     try {
-      a = r.getBlockCloseToken(t.languageId) ?? "}";
+      a = promptlibproxy.getBlockCloseToken(t.languageId) ?? "}";
     } catch (e) {}
     let c = i.length;
     do {
@@ -56,7 +56,7 @@ exports.postProcessChoice = async function (e, t, n, a, c, l, u) {
         break;
       }
       if (c === r) {
-        if (o.shouldFailForDebugPurposes(e)) throw Error(`Aborting: maybeSnipCompletion would have looped on completion: ${i}`);
+        if (env.shouldFailForDebugPurposes(e)) throw Error(`Aborting: maybeSnipCompletion would have looped on completion: ${i}`);
         break;
       }
       c = r;

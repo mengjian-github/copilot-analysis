@@ -3,16 +3,16 @@ Object.defineProperty(exports, "__esModule", {
 });
 exports.postInsertionTasks = exports.postRejectionTasks = exports.captureCode = exports.postInsertConfiguration = void 0;
 const r = require(66881);
-const i = require(40750);
-const o = require(29899);
+const telemetryutils = require("./telemetry-utils");
+const logger = require("./logger");
 const s = require(27727);
 const a = require(94969);
 const c = require(35120);
-const l = require(6333);
+const telemetry = require("./telemetry");
 const u = require(69636);
-const p = require(60070);
-const d = require(93136);
-const h = new o.Logger(o.LogLevel.INFO, "post-insertion");
+const env = require("./env");
+const documentmanager = require("./document-manager");
+const h = new logger.Logger(logger.LogLevel.INFO, "post-insertion");
 const f = [{
   seconds: 15,
   captureCode: !1,
@@ -35,7 +35,7 @@ const f = [{
   captureRejection: !1
 }];
 async function captureCode(e, t, n) {
-  const r = await e.get(d.TextDocumentManager).getTextDocument(t);
+  const r = await e.get(documentmanager.TextDocumentManager).getTextDocument(t);
   if (!r) {
     h.info(e, `Could not get document for ${t.fsPath}. Maybe it was closed by the editor.`);
     return {
@@ -96,7 +96,7 @@ exports.postRejectionTasks = function (e, t, n, o, s) {
     completionTelemetryData: r
   }) => {
     h.debug(e, `${t}.rejected choiceIndex: ${r.properties.choiceIndex}`);
-    i.telemetryRejected(e, t, r);
+    telemetryutils.telemetryRejected(e, t, r);
   });
   const a = new r.ChangeTracker(e, o, n);
   f.filter(e => e.captureRejection).map(r => {
@@ -127,18 +127,18 @@ exports.postRejectionTasks = function (e, t, n, o, s) {
         terminationOffsetInCapturedCode: p
       });
       h.debug(e, `${t}.capturedAfterRejected choiceIndex: ${i.properties.choiceIndex}`, f);
-      l.telemetry(e, t + ".capturedAfterRejected", f, !0);
+      telemetry.telemetry(e, t + ".capturedAfterRejected", f, !0);
     }, 1e3 * r.seconds);
   });
 };
 exports.postInsertionTasks = async function (e, n, o, s, a, c, y, _) {
   h.debug(e, `${n}.accepted choiceIndex: ${c.properties.choiceIndex}`);
-  i.telemetryAccepted(e, n, c);
+  telemetryutils.telemetryAccepted(e, n, c);
   const v = o.trim();
   const b = new r.ChangeTracker(e, a, s);
   const E = async t => {
     await async function (e, t, n, r, i, o, s, a) {
-      const c = await e.get(d.TextDocumentManager).getTextDocument(i);
+      const c = await e.get(documentmanager.TextDocumentManager).getTextDocument(i);
       if (c) {
         const u = c.getText();
         let p = g(u, n, 50, a.offset);
@@ -151,7 +151,7 @@ exports.postInsertionTasks = async function (e, n, o, s, a, c, y, _) {
           insertionOffset: r,
           trackedOffset: a.offset
         }).extendedBy({}, p);
-        l.telemetry(e, t + ".stillInCode", d);
+        telemetry.telemetry(e, t + ".stillInCode", d);
         if (o.captureCode) {
           const {
             prompt: n,
@@ -174,12 +174,12 @@ exports.postInsertionTasks = async function (e, n, o, s, a, c, y, _) {
             trackedOffset: a.offset,
             terminationOffsetInCapturedCode: u
           });
-          h.debug(e, `${t}.capturedAfterAccepted choiceIndex: ${s.properties.choiceIndex}`, d), (0, l.telemetry)(e, t + ".capturedAfterAccepted", f, !0);
+          h.debug(e, `${t}.capturedAfterAccepted choiceIndex: ${s.properties.choiceIndex}`, d), (0, telemetry.telemetry)(e, t + ".capturedAfterAccepted", f, !0);
         }
       }
     }(e, n, v, s, a, t, c, b);
   };
-  if (exports.postInsertConfiguration.triggerPostInsertionSynchroneously && p.isRunningInTest(e)) {
+  if (exports.postInsertConfiguration.triggerPostInsertionSynchroneously && env.isRunningInTest(e)) {
     await E({
       seconds: 0,
       captureCode: !1,

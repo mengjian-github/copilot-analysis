@@ -5,10 +5,10 @@ exports.logEnginePrompt = exports.logEngineCompletion = exports.telemetryError =
 const r = require(1581);
 const i = require(42600);
 const o = require(1402);
-const s = require(51133);
+const config = require("./config");
 const a = require(59189);
 const c = require(46500);
-const l = require(60070);
+const env = require("./env");
 const u = require(26071);
 const p = require(72499);
 exports.CopilotTelemetryReporter = class {};
@@ -17,7 +17,7 @@ class TelemetryReporters {
     return this.reporter;
   }
   getSecureReporter(e) {
-    return y(e) ? this.reporterSecure : l.shouldFailForDebugPurposes(e) ? new u.FailingTelemetryReporter() : void 0;
+    return y(e) ? this.reporterSecure : env.shouldFailForDebugPurposes(e) ? new u.FailingTelemetryReporter() : void 0;
   }
   setReporter(e) {
     this.reporter = e;
@@ -96,21 +96,21 @@ class TelemetryData {
     this.filtersAndExp.filters.addToTelemetry(this);
   }
   extendWithEditorAgnosticFields(e) {
-    this.properties.editor_version = s.formatNameAndVersion(e.get(s.EditorAndPluginInfo).getEditorInfo());
-    this.properties.editor_plugin_version = s.formatNameAndVersion(e.get(s.EditorAndPluginInfo).getEditorPluginInfo());
-    const t = e.get(s.EditorSession);
+    this.properties.editor_version = config.formatNameAndVersion(e.get(config.EditorAndPluginInfo).getEditorInfo());
+    this.properties.editor_plugin_version = config.formatNameAndVersion(e.get(config.EditorAndPluginInfo).getEditorPluginInfo());
+    const t = e.get(config.EditorSession);
     this.properties.client_machineid = t.machineId;
     this.properties.client_sessionid = t.sessionId;
-    this.properties.copilot_version = `copilot/${s.getVersion(e)}`;
-    const n = e.get(s.EditorAndPluginInfo);
+    this.properties.copilot_version = `copilot/${config.getVersion(e)}`;
+    const n = e.get(config.EditorAndPluginInfo);
     this.properties.common_extname = n.getEditorPluginInfo().name;
     this.properties.common_extversion = n.getEditorPluginInfo().version;
-    this.properties.common_vscodeversion = s.formatNameAndVersion(n.getEditorInfo());
+    this.properties.common_vscodeversion = config.formatNameAndVersion(n.getEditorInfo());
   }
   extendWithConfigProperties(e) {
-    const t = s.dumpConfig(e);
-    t["copilot.build"] = s.getBuild(e);
-    t["copilot.buildType"] = s.getBuildType(e);
+    const t = config.dumpConfig(e);
+    t["copilot.build"] = config.getBuild(e);
+    t["copilot.buildType"] = config.getBuildType(e);
     const n = e.get(TelemetryUserConfig);
     if (n.trackingId) {
       t["copilot.trackingId"] = n.trackingId;
@@ -178,7 +178,7 @@ class TelemetryData {
       } : (n.problem = "both", n.error += `; ${e}`);
     }
     if (void 0 === n) return !0;
-    if (l.shouldFailForDebugPurposes(e)) throw new Error(`Invalid telemetry data: ${n.problem} ${n.error} properties=${JSON.stringify(this.properties)} measurements=${JSON.stringify(this.measurements)}`);
+    if (env.shouldFailForDebugPurposes(e)) throw new Error(`Invalid telemetry data: ${n.problem} ${n.error} properties=${JSON.stringify(this.properties)} measurements=${JSON.stringify(this.measurements)}`);
     telemetryError(e, "invalidTelemetryData", TelemetryData.createAndMarkAsIssued({
       properties: JSON.stringify(this.properties),
       measurements: JSON.stringify(this.measurements),
@@ -229,10 +229,10 @@ async function telemetry(e, t, n, r) {
 }
 function v(e, t) {
   t.unique_id = i.v4();
-  const n = e.get(s.EditorAndPluginInfo);
+  const n = e.get(config.EditorAndPluginInfo);
   t.common_extname = n.getEditorPluginInfo().name;
   t.common_extversion = n.getEditorPluginInfo().version;
-  t.common_vscodeversion = s.formatNameAndVersion(n.getEditorInfo());
+  t.common_vscodeversion = config.formatNameAndVersion(n.getEditorInfo());
 }
 async function telemetryError(e, t, n, r) {
   await e.get(u.PromiseQueue).register(async function (e, t, n, r) {

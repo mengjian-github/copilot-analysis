@@ -2,7 +2,7 @@ Object.defineProperty(exports, "__esModule", {
   value: !0
 });
 exports.NoopTelemetryReporter = exports.snippyTelemetry = exports.matchNotificationTelemetry = exports.matchPanelTelemetry = void 0;
-const r = require(6333);
+const telemetry = require("./telemetry");
 const i = require(77032);
 const o = /^[1-6][0-9][0-9]$/;
 const s = /([A-Z][a-z]+)/;
@@ -26,25 +26,25 @@ exports.matchPanelTelemetry = new class extends c {
   }) {
     const n = this.buildKey("open", "count");
     this.matchPanelTiming = Date.now().valueOf();
-    const o = r.TelemetryData.createAndMarkAsIssued({
+    const o = telemetry.TelemetryData.createAndMarkAsIssued({
       opened_by: t
     });
     i.codeQuoteLogger.info(e, n, o);
-    r.telemetry(e, n, o);
+    telemetry.telemetry(e, n, o);
   }
   handleClose({
     context: e,
     actor: t
   }) {
     if (void 0 === this.matchPanelTiming) return void i.codeQuoteLogger.debug(e, "Match panel timing is undefined, or the panel already closed.");
-    const n = r.TelemetryData.createAndMarkAsIssued({
+    const n = telemetry.TelemetryData.createAndMarkAsIssued({
       dismissed_by: t
     }, {
       time_open: Date.now().valueOf() - this.matchPanelTiming
     });
     const o = this.buildKey("close", "count");
     i.codeQuoteLogger.info(e, o, n);
-    r.telemetry(e, o, n);
+    telemetry.telemetry(e, o, n);
     this.matchPanelTiming = void 0;
   }
 }();
@@ -56,23 +56,23 @@ exports.matchNotificationTelemetry = new class extends c {
     context: e,
     actor: t
   }) {
-    const n = r.TelemetryData.createAndMarkAsIssued({
+    const n = telemetry.TelemetryData.createAndMarkAsIssued({
       opened_by: t
     });
     const o = this.buildKey("show_matches", "count");
     i.codeQuoteLogger.info(e, o, n);
-    r.telemetry(e, o, n);
+    telemetry.telemetry(e, o, n);
   }
   handleDismiss({
     context: e,
     actor: t
   }) {
-    const n = r.TelemetryData.createAndMarkAsIssued({
+    const n = telemetry.TelemetryData.createAndMarkAsIssued({
       dismissed_by: t
     });
     const o = this.buildKey("dismiss", "count");
     i.codeQuoteLogger.info(e, o, n);
-    r.telemetry(e, o, n);
+    telemetry.telemetry(e, o, n);
   }
 }();
 exports.snippyTelemetry = new class extends c {
@@ -84,24 +84,24 @@ exports.snippyTelemetry = new class extends c {
     origin: t,
     reason: n
   }) {
-    const o = r.TelemetryData.createAndMarkAsIssued({
+    const o = telemetry.TelemetryData.createAndMarkAsIssued({
       origin: t,
       reason: n
     });
     i.codeQuoteLogger.info(e, "unexpected_error", o);
-    r.telemetryError(e, this.buildKey("unexpected_error"), o);
+    telemetry.telemetryError(e, this.buildKey("unexpected_error"), o);
   }
   handleCompletionMissing({
     context: e,
     origin: t,
     reason: n
   }) {
-    const o = r.TelemetryData.createAndMarkAsIssued({
+    const o = telemetry.TelemetryData.createAndMarkAsIssued({
       origin: t,
       reason: n
     });
     i.codeQuoteLogger.info(e, "completion_missing", o);
-    r.telemetryError(e, this.buildKey("completion_missing"), o);
+    telemetry.telemetryError(e, this.buildKey("completion_missing"), o);
   }
   handleSnippyNetworkError({
     context: e,
@@ -113,11 +113,11 @@ exports.snippyTelemetry = new class extends c {
       origin: t
     });
     const c = n.split(s).filter(e => Boolean(e)).join("_").toLowerCase();
-    const l = r.TelemetryData.createAndMarkAsIssued({
+    const l = telemetry.TelemetryData.createAndMarkAsIssued({
       message: a
     });
     i.codeQuoteLogger.info(e, c, t, l);
-    r.telemetryError(e, this.buildKey(c, t), l);
+    telemetry.telemetryError(e, this.buildKey(c, t), l);
   }
 }();
 exports.NoopTelemetryReporter = class extends c {

@@ -4,19 +4,19 @@ Object.defineProperty(exports, "__esModule", {
 exports.DiagnosticReport = exports.openDiagnosticReport = void 0;
 const r = require(22037);
 const i = require(24404);
-const o = require(89496);
-const s = require(30362);
-const a = require(51133);
-const c = require(82279);
+const vscode = require("vscode");
+const token = require("./token");
+const config = require("./config");
+const request = require("./request");
 exports.openDiagnosticReport = async function (e) {
-  const t = new DiagnosticReport(e => void 0 !== o.extensions.getExtension(e), process.env);
+  const t = new DiagnosticReport(e => void 0 !== vscode.extensions.getExtension(e), process.env);
   const n = await t.collectData(e);
   const r = t.formatAsMarkdown(n);
-  const i = await o.workspace.openTextDocument({
+  const i = await vscode.workspace.openTextDocument({
     language: "markdown",
     content: r
   });
-  await o.window.showTextDocument(i);
+  await vscode.window.showTextDocument(i);
 };
 class DiagnosticReport {
   constructor(e, t) {
@@ -59,7 +59,7 @@ class DiagnosticReport {
     return {
       name: "Extensions",
       items: {
-        "Copilot Version": a.getVersion(e),
+        "Copilot Version": config.getVersion(e),
         "Is `win-ca` installed?": void 0 !== this.isExtensionInstalled("ukoloff.win-ca"),
         "Is `mac-ca` installed?": void 0 !== this.isExtensionInstalled("linhmtran168.mac-ca-vscode")
       }
@@ -79,7 +79,7 @@ class DiagnosticReport {
     };
   }
   async collectFeatureFlagsSection(e) {
-    const t = await e.get(s.CopilotTokenManager).getCopilotToken(e);
+    const t = await e.get(token.CopilotTokenManager).getCopilotToken(e);
     return {
       name: "Feature Flags",
       items: {
@@ -100,7 +100,7 @@ class DiagnosticReport {
   }
   async determineReachability(e, t) {
     try {
-      const n = await e.get(c.Fetcher).fetch(t, {});
+      const n = await e.get(request.Fetcher).fetch(t, {});
       return `HTTP ${n.status} - ${n.statusText}`;
     } catch (e) {
       return e.message;
@@ -117,7 +117,7 @@ class DiagnosticReport {
     return t ? this.environment[t] : void 0;
   }
   findVsCodeConfiguration(e, t) {
-    return o.workspace.getConfiguration(e).get(t);
+    return vscode.workspace.getConfiguration(e).get(t);
   }
 }
 exports.DiagnosticReport = DiagnosticReport;

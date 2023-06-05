@@ -2,7 +2,7 @@ Object.defineProperty(exports, "__esModule", {
   value: !0
 });
 exports.TestNotificationSender = exports.TestUrlOpener = exports.rangeToString = exports.positionToString = void 0;
-const r = require(41547);
+const notification = require("./notification");
 function positionToString(e) {
   return `${e.line}:${e.character}`;
 }
@@ -18,7 +18,7 @@ exports.TestUrlOpener = class {
     this.openedUrls.push(e);
   }
 };
-class TestNotificationSender extends r.NotificationSender {
+class TestNotificationSender extends notification.NotificationSender {
   constructor() {
     super();
     this.sentMessages = [];

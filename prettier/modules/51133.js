@@ -2,7 +2,7 @@ Object.defineProperty(exports, "__esModule", {
   value: !0
 });
 exports.editorVersionHeaders = exports.EditorAndPluginInfo = exports.formatNameAndVersion = exports.EditorSession = exports.getVersion = exports.getBuild = exports.getBuildType = exports.isProduction = exports.BuildInfo = exports.getEnabledConfig = exports.getLanguageConfig = exports.dumpConfig = exports.getHiddenConfig = exports.isDefaultSettingOverwritten = exports.getConfig = exports.getConfigDefaultForObjectKey = exports.getConfigDefaultForKey = exports.InMemoryConfigProvider = exports.DefaultsOnlyConfigProvider = exports.ConfigProvider = exports.ConfigBlockModeConfig = exports.BlockModeConfig = exports.BuildType = exports.shouldDoServerTrimming = exports.shouldDoParsingTrimming = exports.BlockMode = exports.ConfigKey = void 0;
-const r = require(23055);
+const utils = require("./utils");
 const i = require(44197);
 const o = require(59189);
 const s = require(4147);
@@ -59,12 +59,12 @@ class BlockModeConfig {}
 function u(e, t) {
   switch (e) {
     case a.Parsing:
-      return r.isSupportedLanguageId(t) ? a.Parsing : a.Server;
+      return utils.isSupportedLanguageId(t) ? a.Parsing : a.Server;
     case a.Server:
       return a.Server;
     case a.ParsingAndServer:
     default:
-      return r.isSupportedLanguageId(t) ? a.ParsingAndServer : a.Server;
+      return utils.isSupportedLanguageId(t) ? a.ParsingAndServer : a.Server;
   }
 }
 exports.BlockModeConfig = BlockModeConfig;
@@ -81,7 +81,7 @@ exports.ConfigBlockModeConfig = class extends BlockModeConfig {
         return a.Parsing;
     }
     const i = await e.get(o.Features).overrideBlockMode();
-    return i ? u(i, n) : "ruby" == n ? a.Parsing : r.isSupportedLanguageId(n) ? a.ParsingAndServer : a.Server;
+    return i ? u(i, n) : "ruby" == n ? a.Parsing : utils.isSupportedLanguageId(n) ? a.ParsingAndServer : a.Server;
   }
 };
 class ConfigProvider {}

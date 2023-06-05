@@ -2,10 +2,10 @@ Object.defineProperty(exports, "__esModule", {
   value: !0
 });
 exports.getTemperatureForSamples = exports.calculateMeanAlternativeLogProb = exports.calculateMeanLogProb = exports.cleanupIndentChoices = exports.convertToAPIChoice = exports.DEFAULT_CHARACTER_MULTIPLIER = exports.MAX_PROMPT_LENGTH = exports.getRequestId = exports.OpenAIFetcher = exports.LiveOpenAIFetcher = exports.CopilotUiKind = void 0;
-const r = require(51133);
-const i = require(29899);
-const o = require(6333);
-const s = require(60070);
+const config = require("./config");
+const logger = require("./logger");
+const telemetry = require("./telemetry");
+const env = require("./env");
 var a = require(24419);
 function calculateMeanLogProb(e, t) {
   if (t?.logprobs?.token_logprobs) try {
@@ -18,7 +18,7 @@ function calculateMeanLogProb(e, t) {
     }
     return n > 0 ? e / n : void 0;
   } catch (t) {
-    i.logger.exception(e, t, "Error calculating mean prob");
+    logger.logger.exception(e, t, "Error calculating mean prob");
   }
 }
 function calculateMeanAlternativeLogProb(e, t) {
@@ -36,7 +36,7 @@ function calculateMeanAlternativeLogProb(e, t) {
     }
     return n > 0 ? e / n : void 0;
   } catch (t) {
-    i.logger.exception(e, t, "Error calculating mean prob");
+    logger.logger.exception(e, t, "Error calculating mean prob");
   }
 }
 Object.defineProperty(exports, "CopilotUiKind", {
@@ -66,7 +66,7 @@ Object.defineProperty(exports, "getRequestId", {
 exports.MAX_PROMPT_LENGTH = 1500;
 exports.DEFAULT_CHARACTER_MULTIPLIER = 3;
 exports.convertToAPIChoice = function (e, t, n, r, i, s, a, u) {
-  o.logEngineCompletion(e, t, n, i, r);
+  telemetry.logEngineCompletion(e, t, n, i, r);
   return {
     completionText: t,
     meanLogProb: calculateMeanLogProb(e, n),
@@ -97,7 +97,7 @@ exports.cleanupIndentChoices = async function* (e, t) {
 exports.calculateMeanLogProb = calculateMeanLogProb;
 exports.calculateMeanAlternativeLogProb = calculateMeanAlternativeLogProb;
 exports.getTemperatureForSamples = function (e, t) {
-  if (s.isRunningInTest(e)) return 0;
-  const n = parseFloat(r.getConfig(e, r.ConfigKey.Temperature));
+  if (env.isRunningInTest(e)) return 0;
+  const n = parseFloat(config.getConfig(e, config.ConfigKey.Temperature));
   return n >= 0 && n <= 1 ? n : t <= 1 ? 0 : t < 10 ? .2 : t < 20 ? .4 : .8;
 };

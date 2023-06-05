@@ -2,27 +2,27 @@ Object.defineProperty(exports, "__esModule", {
   value: !0
 });
 exports.CopilotPanel = void 0;
-const r = require(89496);
-const i = require(51133);
+const vscode = require("vscode");
+const config = require("./config");
 const o = require(80256);
-const s = require(57017);
-const a = require(73060);
+const tasks = require("./tasks");
+const consts = require("./const");
 const c = require(23799);
 exports.CopilotPanel = class {
   constructor(e) {
-    this._onDidChange = new r.EventEmitter();
+    this._onDidChange = new vscode.EventEmitter();
     this._documents = new Map();
     this.panelSolutions = new Map();
     this._ctx = e;
-    this._closeSubscription = r.workspace.onDidCloseTextDocument(e => {
+    this._closeSubscription = vscode.workspace.onDidCloseTextDocument(e => {
       if (e.isClosed && e.uri.scheme == o.CopilotPanelScheme) {
         this._documents.delete(e.uri.toString());
         this.panelSolutions.delete(e.uri.toString());
       }
     });
-    this._changeSubscription = r.window.onDidChangeVisibleTextEditors(e => {
+    this._changeSubscription = vscode.window.onDidChangeVisibleTextEditors(e => {
       if (e.some(e => e.document.uri.scheme == o.CopilotPanelScheme)) {
-        r.commands.executeCommand("setContext", a.CopilotPanelVisible, !1);
+        vscode.commands.executeCommand("setContext", consts.CopilotPanelVisible, !1);
       }
     });
   }
@@ -40,10 +40,10 @@ exports.CopilotPanel = class {
     let t = this._documents.get(e.toString());
     let n = t?.model;
     if (t && n) return this.getTextDocumentContent(t, e);
-    const s = new r.CancellationTokenSource();
+    const s = new vscode.CancellationTokenSource();
     const [a, l] = o.decodeLocation(this._ctx, e);
-    const u = await r.workspace.openTextDocument(a);
-    n = new c.CopilotListDocument(this._ctx, e, u, l, i.getConfig(this._ctx, i.ConfigKey.ListCount), s.token);
+    const u = await vscode.workspace.openTextDocument(a);
+    n = new c.CopilotListDocument(this._ctx, e, u, l, config.getConfig(this._ctx, config.ConfigKey.ListCount), s.token);
     n.onDidResultUpdated(e => {
       this._onDidChange.fire(e);
     });
@@ -65,8 +65,8 @@ exports.CopilotPanel = class {
     const o = n.completionContext.insertPosition;
     const a = c.CopilotListDocument.separator.split("\n").length - 1;
     const l = n.solutions().map((t, c) => {
-      const l = new r.Position(i + a - 1, 0);
-      const u = new r.Position(l.line + t.displayLines.length, 0);
+      const l = new vscode.Position(i + a - 1, 0);
+      const u = new vscode.Position(l.line + t.displayLines.length, 0);
       const p = n.savedTelemetryData.extendedBy({
         choiceIndex: t.choiceIndex.toString()
       }, {
@@ -76,7 +76,7 @@ exports.CopilotPanel = class {
       });
       p.extendWithRequestId(t.requestId);
       p.markAsDisplayed();
-      const d = new r.Range(l, u);
+      const d = new vscode.Range(l, u);
       i = u.line;
       return {
         targetUri: n.targetUri,
@@ -84,9 +84,9 @@ exports.CopilotPanel = class {
         insertPosition: o,
         completionText: t.completionText,
         postInsertionCallback: async () => {
-          const i = (await r.workspace.openTextDocument(n.targetUri)).offsetAt(o);
+          const i = (await vscode.workspace.openTextDocument(n.targetUri)).offsetAt(o);
           e.cts.cancel();
-          await s.postInsertionTasks(this._ctx, "solution", t.completionText, i, n.targetUri, p, `${t.requestId.headerRequestId}-${c}`, o);
+          await tasks.postInsertionTasks(this._ctx, "solution", t.completionText, i, n.targetUri, p, `${t.requestId.headerRequestId}-${c}`, o);
         }
       };
     });
@@ -94,10 +94,10 @@ exports.CopilotPanel = class {
     return l;
   }
   getCodeLens(e, t) {
-    return (this.panelSolutions.get(t.toString()) ?? this.generatePanelSolutionInfo(e, t)).map(e => new r.CodeLens(e.range, {
+    return (this.panelSolutions.get(t.toString()) ?? this.generatePanelSolutionInfo(e, t)).map(e => new vscode.CodeLens(e.range, {
       title: "Accept Solution",
       tooltip: "Replace code with this solution",
-      command: a.CMDAcceptPanelSolution,
+      command: consts.CMDAcceptPanelSolution,
       arguments: [e.targetUri, e.insertPosition, e.completionText, e.postInsertionCallback]
     }));
   }

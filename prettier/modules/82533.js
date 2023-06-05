@@ -2,7 +2,7 @@ Object.defineProperty(exports, "__esModule", {
   value: !0
 });
 exports.parsesWithoutError = exports.getCallSites = exports.getPrompt = exports.getNodeStart = exports.getFunctionPositions = exports.getBlockCloseToken = exports.isSupportedLanguageId = exports.isBlockBodyFinished = exports.isEmptyBlockStart = exports.terminate = exports.init = void 0;
-const r = require(23055);
+const utils = require("./utils");
 let i = null;
 const o = new Map();
 let s = 0;
@@ -30,10 +30,10 @@ exports.init = function (t, u, p) {
       });
     };
   }(t, p);
-  i = r.createWorker();
+  i = utils.createWorker();
   o.clear();
   s = 0;
-  const d = t.get(r.FileSystem);
+  const d = t.get(utils.FileSystem);
   function h(e) {
     p.exception(t, e);
     for (const t of o.values()) t.reject(e);
@@ -101,12 +101,12 @@ function l(e, t, n) {
     });
   };
 }
-exports.isEmptyBlockStart = r.isEmptyBlockStart;
-exports.isBlockBodyFinished = r.isBlockBodyFinished;
-exports.isSupportedLanguageId = r.isSupportedLanguageId;
-exports.getBlockCloseToken = r.getBlockCloseToken;
-exports.getFunctionPositions = r.getFunctionPositions;
-exports.getNodeStart = r.getNodeStart;
-exports.getPrompt = r.getPrompt;
-exports.getCallSites = r.getCallSites;
-exports.parsesWithoutError = r.parsesWithoutError;
+exports.isEmptyBlockStart = utils.isEmptyBlockStart;
+exports.isBlockBodyFinished = utils.isBlockBodyFinished;
+exports.isSupportedLanguageId = utils.isSupportedLanguageId;
+exports.getBlockCloseToken = utils.getBlockCloseToken;
+exports.getFunctionPositions = utils.getFunctionPositions;
+exports.getNodeStart = utils.getNodeStart;
+exports.getPrompt = utils.getPrompt;
+exports.getCallSites = utils.getCallSites;
+exports.parsesWithoutError = utils.parsesWithoutError;

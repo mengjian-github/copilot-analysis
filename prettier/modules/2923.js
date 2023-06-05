@@ -4,13 +4,13 @@ Object.defineProperty(exports, "__esModule", {
 exports.AzureInsightReporter = void 0;
 const r = require(9574);
 const i = require(22037);
-const o = require(51133);
-const s = require(6333);
+const config = require("./config");
+const telemetry = require("./telemetry");
 function a(e, t) {
   t.commonProperties = function (e, t) {
     (e = e || {}).common_os = i.platform();
     e.common_platformversion = i.release();
-    const n = t.get(o.EditorSession);
+    const n = t.get(config.EditorSession);
     e.common_vscodemachineid = n.machineId;
     e.common_vscodesessionid = n.sessionId;
     e.common_uikind = "desktop";
@@ -18,11 +18,11 @@ function a(e, t) {
     e.common_isnewappinstall = "";
     return e;
   }(t.commonProperties, e);
-  const n = e.get(o.EditorSession);
+  const n = e.get(config.EditorSession);
   t.context.tags[t.context.keys.sessionId] = n.sessionId;
   t.context.tags[t.context.keys.userId] = n.machineId;
   t.context.tags[t.context.keys.cloudRoleInstance] = "REDACTED";
-  t.config.endpointUrl = e.get(s.TelemetryEndpointUrl).getUrl();
+  t.config.endpointUrl = e.get(telemetry.TelemetryEndpointUrl).getUrl();
 }
 exports.AzureInsightReporter = class {
   constructor(e, t, n) {

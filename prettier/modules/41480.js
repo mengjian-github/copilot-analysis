@@ -3,11 +3,11 @@ Object.defineProperty(exports, "__esModule", {
 });
 exports.ExtensionCommitFileResolver = void 0;
 const r = require(71017);
-const i = require(89496);
-const o = require(84936);
-class ExtensionCommitFileResolver extends o.CommitFileResolver {
+const vscode = require("vscode");
+const commitfileresolver = require("./commit-file-resolver");
+class ExtensionCommitFileResolver extends commitfileresolver.CommitFileResolver {
   async getCoCommitResult(e, t) {
-    const n = i.extensions.getExtension("vscode.git");
+    const n = vscode.extensions.getExtension("vscode.git");
     if (void 0 === n) return [];
     const o = n.exports.getAPI(1);
     if (void 0 === o) return [];

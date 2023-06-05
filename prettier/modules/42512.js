@@ -3,7 +3,7 @@ Object.defineProperty(exports, "__esModule", {
 });
 exports.DefaultNetworkConfiguration = exports.NetworkConfiguration = void 0;
 const r = require(17373);
-const i = require(30362);
+const token = require("./token");
 const o = "github.com";
 const s = `https://${o}`;
 class NetworkConfiguration {}
@@ -38,7 +38,7 @@ exports.DefaultNetworkConfiguration = class extends NetworkConfiguration {
     const n = this.baseUri;
     this.recalculateUrls(t);
     if (n.toString() !== this.baseUri.toString()) {
-      e.get(i.CopilotTokenManager).resetCopilotToken(e);
+      e.get(token.CopilotTokenManager).resetCopilotToken(e);
     }
   }
   recalculateUrls(e) {

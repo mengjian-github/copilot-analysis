@@ -32,7 +32,7 @@ Object.defineProperty(exports, "__esModule", {
 });
 exports.registerCodeQuoteCompletionTracker = exports.CodeQuoteCompletionsTracker = exports.SweepInterval = void 0;
 const f = require(70106);
-const m = require(93136);
+const documentmanager = require("./document-manager");
 const g = require(2135);
 const y = require(77032);
 const _ = require(47302);
@@ -102,7 +102,7 @@ class CodeQuoteCompletionsTracker {
     };
     this.trackChanges = (e, t) => {
       const n = _.MatchState.getEditorRefSnapshot(e.uri.fsPath);
-      const r = this.ctx.get(m.TextDocumentManager).textDocuments.find(t => t.uri.fsPath === e.uri.fsPath);
+      const r = this.ctx.get(documentmanager.TextDocumentManager).textDocuments.find(t => t.uri.fsPath === e.uri.fsPath);
       if (!n.size) return;
       if (!r) return void _.MatchState.removeEditorRef(e.uri.fsPath);
       const i = Array.from(n.values()).map(e => E.createJSON(e, t)).flatMap(e => {
@@ -131,7 +131,7 @@ class CodeQuoteCompletionsTracker {
       y.codeQuoteLogger.info(this.ctx, "onDidChangeTextDocument", i);
     };
     this.sweep = () => {
-      const e = this.ctx.get(m.TextDocumentManager).textDocuments.map(e => e.uri.fsPath);
+      const e = this.ctx.get(documentmanager.TextDocumentManager).textDocuments.map(e => e.uri.fsPath);
       _.MatchState.removeMatches(e, e => {
         const n = Date.now();
         return Boolean(e.deletedAt && n - e.deletedAt > exports.SweepInterval);
@@ -144,7 +144,7 @@ class CodeQuoteCompletionsTracker {
   }
   listen() {
     if (h(this, u, "f")) return;
-    const e = this.ctx.get(m.TextDocumentManager);
+    const e = this.ctx.get(documentmanager.TextDocumentManager);
     d(this, u, e.onDidChangeTextDocument(this.onDocumentChange), "f");
   }
   dispose() {

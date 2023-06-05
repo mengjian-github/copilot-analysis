@@ -1,167 +1,279 @@
-Object.defineProperty(exports, "__esModule", {
-    value: !0
-  }), exports.registerGhostText = exports.handleGhostTextPostInsert = exports.handleGhostTextShown = exports.resetPartialAcceptanceState = exports.resetStateForLastCompletion = exports.handlePartialGhostTextPostInsert = exports.provideInlineCompletions = exports.ghostTextLogger = exports.getInsertionTextFromCompletion = void 0;
-  const r = require(89496),
-    i = require(51133),
-    o = require(42218),
-    s = require(89334),
-    a = require(40750),
-    c = require(29899),
-    l = require(57017),
-    u = require(6333),
-    p = require(91238),
-    d = require(54540),
-    h = "_ghostTextPostInsert";
-  function f(e) {
-    return e.insertText;
-  }
-  let m, g;
-  exports.getInsertionTextFromCompletion = f, exports.ghostTextLogger = new c.Logger(c.LogLevel.INFO, "ghostText");
-  let y,
-    _,
-    v = [];
-  async function b(e, n, c, p, f) {
-    const b = await async function (e, n, a, c, p) {
-      const f = u.TelemetryData.createAndMarkAsIssued();
-      if (!function (e) {
-        return (0, i.getConfig)(e, i.ConfigKey.InlineSuggestEnable);
-      }(e)) return {
+const vscode = require("vscode");
+const config = require("./config");
+const completionsfromghost = require("./completions-from-ghost");
+const getghosttext = require("./get-ghost-text");
+const telemetryutils = require("./telemetry-utils");
+const logger = require("./logger");
+const tasks = require("./tasks");
+const telemetry = require("./telemetry");
+const main = require("./main");
+const ignoredocument = require("./ignore-document");
+
+function getInsertionTextFromCompletion(e) {
+  return e.insertText;
+}
+
+let m;
+let g;
+
+exports.getInsertionTextFromCompletion = getInsertionTextFromCompletion;
+exports.ghostTextLogger = new logger.Logger(logger.LogLevel.INFO, "ghostText");
+
+let y;
+let _;
+let v = [];
+
+
+async function provideInlineCompletions(
+  ctx,
+  document,
+  position,
+  context,
+  token
+) {
+  const b = await (async function (ctx, document, position, context, token) {
+    // 代码提示入口逻辑
+    if (config.getConfig(ctx, config.ConfigKey.InlineSuggestEnable))
+      return {
         type: "abortedBeforeIssued",
-        reason: "ghost text is disabled"
+        reason: "ghost text is disabled",
       };
-      if ((0, d.ignoreDocument)(e, n)) return {
+
+    if (ignoredocument.ignoreDocument(ctx, document))
+      return {
         type: "abortedBeforeIssued",
-        reason: "document is ignored"
+        reason: "document is ignored",
       };
-      if (exports.ghostTextLogger.debug(e, `Ghost text called at [${a.line}, ${a.character}], with triggerKind ${c.triggerKind}`), p.isCancellationRequested) return exports.ghostTextLogger.info(e, "Cancelled before extractPrompt"), {
-        type: "abortedBeforeIssued",
-        reason: "cancelled before extractPrompt"
-      };
-      const b = await (0, s.getGhostText)(e, n, a, c.triggerKind === r.InlineCompletionTriggerKind.Invoke, f, p);
-      if ("success" !== b.type) return exports.ghostTextLogger.debug(e, "Breaking, no results from getGhostText -- " + b.type + ": " + b.reason), b;
-      const [E, w] = b.value;
-      if (m && g && (!m.isEqual(a) || g !== n.uri) && w !== s.ResultType.TypingAsSuggested) {
-        const t = function () {
-          const e = [];
-          return v.forEach(t => {
-            if (t.displayText && t.telemetry) {
-              let n, r;
-              _ ? (n = t.displayText.substring(_ - 1), r = t.telemetry.extendedBy({
-                compType: "partial"
-              }, {
-                compCharLen: n.length
-              })) : (n = t.displayText, r = t.telemetry);
-              const i = {
-                completionText: n,
-                completionTelemetryData: r
-              };
-              e.push(i);
-            }
-          }), e;
-        }();
-        t.length > 0 && (0, l.postRejectionTasks)(e, "ghostText", n.offsetAt(m), g, t), _ = void 0;
-      }
-      if (m = a, g = n.uri, v = [], p.isCancellationRequested) return exports.ghostTextLogger.info(e, "Cancelled after getGhostText"), {
-        type: "canceled",
-        reason: "after getGhostText",
-        telemetryData: {
-          telemetryBlob: b.telemetryBlob
+
+    if (token.isCancellationRequested)
+      return (
+        exports.ghostTextLogger.info(ctx, "Cancelled before extractPrompt"),
+        {
+          type: "abortedBeforeIssued",
+          reason: "cancelled before extractPrompt",
         }
+      );
+
+    // 这里拿到整个代码提示的结果
+    const b = await getghosttext.getGhostText(
+      ctx,
+      document,
+      position,
+      context.triggerKind === vscode.InlineCompletionTriggerKind.Invoke,
+      f,  // 一个不重要的上报
+      token
+    );
+
+    const [texts, resultType] = b.value;
+    
+    if (token.isCancellationRequested)
+      return (
+        exports.ghostTextLogger.info(ctx, "Cancelled after getGhostText"),
+        {
+          type: "canceled",
+          reason: "after getGhostText",
+          telemetryData: {
+            telemetryBlob: b.telemetryBlob,
+          },
+        }
+      );
+
+    const completions = completionsfromghost.completionsFromGhostTextResults(
+      ctx,
+      texts,
+      resultType,
+      document,
+      position,
+      vscode.window.visibleTextEditors.find(
+        (t) => t.document === document
+      )?.options,
+      y
+    );
+    const S = completions.map((completion) => {
+      const { text, range: i } = completion;
+      const range = new vscode.Range(
+        new vscode.Position(i.start.line, i.start.character),
+        new vscode.Position(i.end.line, i.end.character)
+      );
+      const s = new vscode.InlineCompletionItem(text, range);
+      s.index = completion.index;
+      s.telemetry = completion.telemetry;
+      s.displayText = completion.displayText;
+      s.resultType = completion.resultType;
+      s.id = completion.uuid;
+      s.uri = document.uri;
+      s.insertOffset = document.offsetAt(
+        new vscode.Position(completion.position.line, completion.position.character)
+      );
+      s.command = {
+        title: "PostInsertTask",
+        command: h,
+        arguments: [s],
       };
-      const T = (0, o.completionsFromGhostTextResults)(e, E, w, n, a, function (e) {
-          return r.window.visibleTextEditors.find(t => t.document === e)?.options;
-        }(n), y),
-        S = T.map(e => {
-          const {
-              text: t,
-              range: i
-            } = e,
-            o = new r.Range(new r.Position(i.start.line, i.start.character), new r.Position(i.end.line, i.end.character)),
-            s = new r.InlineCompletionItem(t, o);
-          return s.index = e.index, s.telemetry = e.telemetry, s.displayText = e.displayText, s.resultType = e.resultType, s.id = e.uuid, s.uri = n.uri, s.insertOffset = n.offsetAt(new r.Position(e.position.line, e.position.character)), s.command = {
-            title: "PostInsertTask",
-            command: h,
-            arguments: [s]
-          }, s;
-        });
-      return 0 === S.length ? {
-        type: "empty",
-        reason: "no completions in final result",
-        telemetryData: b.telemetryData
-      } : {
-        ...b,
-        value: S
-      };
-    }(e, n, c, p, f);
-    return await (0, a.handleGhostTextResultTelemetry)(e, b);
+      return s;
+    });
+    return 0 === S.length
+      ? {
+          type: "empty",
+          reason: "no completions in final result",
+          telemetryData: b.telemetryData,
+        }
+      : {
+          ...b,
+          value: S,
+        };
+  })(ctx, document, position, context, token);
+  return await telemetryutils.handleGhostTextResultTelemetry(ctx, b);
+}
+
+exports.provideInlineCompletions = provideInlineCompletions;
+
+class InlineCompletionItemProvider {
+  constructor(context) {
+    this.ctx = context;
   }
-  exports.provideInlineCompletions = b;
-  class E {
-    constructor(e) {
-      this.ctx = e;
-    }
-    async provideInlineCompletionItems(e, t, n, o) {
-      if (n.triggerKind === r.InlineCompletionTriggerKind.Automatic && (s = this.ctx, !(0, i.getConfig)(s, i.ConfigKey.EnableAutoCompletions))) return;
-      var s;
-      const a = await b(this.ctx, e, t, n, o);
-      return a ? {
-        items: a,
-        suppressSuggestions: !0
-      } : void 0;
-    }
-    handleDidShowCompletionItem(e) {
-      x(this.ctx, e);
-    }
-    handleDidPartiallyAcceptCompletionItem(e, t) {
-      w(this.ctx, e, t);
+
+  async provideInlineCompletionItems(document, position, context, token) {
+    if (
+      context.triggerKind === vscode.InlineCompletionTriggerKind.Automatic &&
+      !config.getConfig(this.ctx, config.ConfigKey.EnableAutoCompletions)
+    )
+      return;
+    const items = await provideInlineCompletions(
+      this.ctx,
+      document,
+      position,
+      context,
+      token
+    );
+    return items
+      ? {
+          items: items,
+          suppressSuggestions: true,
+        }
+      : void 0;
+  }
+  handleDidShowCompletionItem(e) {
+    handleGhostTextShown(this.ctx, e);
+  }
+  handleDidPartiallyAcceptCompletionItem(e, t) {
+    handlePartialGhostTextPostInsert(this.ctx, e, t);
+  }
+}
+async function handlePartialGhostTextPostInsert(e, n, r) {
+  if (r === getInsertionTextFromCompletion(n).length) {
+    resetStateForLastCompletion();
+  }
+  exports.ghostTextLogger.debug(e, "Ghost text partial post insert");
+  if (
+    n.telemetry &&
+    n.uri &&
+    n.displayText &&
+    n.insertOffset &&
+    n.range &&
+    n.id
+  ) {
+    const t = (function (e, t) {
+      if (!e.range || !e.range.start || !e.range.end) return;
+      const n = getInsertionTextFromCompletion(e);
+      return e.displayText !== n && n.trim() === e.displayText
+        ? t
+        : t - e.range.end.character + e.range.start.character;
+    })(n, r);
+    if (t) {
+      const i = n.telemetry.extendedBy(
+        {
+          compType: "partial",
+        },
+        {
+          compCharLen: t,
+        }
+      );
+      _ = r;
+      const o = n.displayText.substring(0, t);
+      await (0, tasks.postInsertionTasks)(
+        e,
+        "ghostText",
+        o,
+        n.insertOffset,
+        n.uri,
+        i,
+        n.id,
+        n.range.start
+      );
     }
   }
-  async function w(e, n, r) {
-    if (r === f(n).length && T(), exports.ghostTextLogger.debug(e, "Ghost text partial post insert"), n.telemetry && n.uri && n.displayText && n.insertOffset && n.range && n.id) {
-      const t = function (e, t) {
-        if (!e.range || !e.range.start || !e.range.end) return;
-        const n = f(e);
-        return e.displayText !== n && n.trim() === e.displayText ? t : t - e.range.end.character + e.range.start.character;
-      }(n, r);
-      if (t) {
-        const i = n.telemetry.extendedBy({
-          compType: "partial"
-        }, {
-          compCharLen: t
-        });
-        _ = r;
-        const o = n.displayText.substring(0, t);
-        await (0, l.postInsertionTasks)(e, "ghostText", o, n.insertOffset, n.uri, i, n.id, n.range.start);
+}
+function resetStateForLastCompletion() {
+  v = [];
+  g = void 0;
+  m = void 0;
+}
+function resetPartialAcceptanceState() {
+  _ = void 0;
+}
+function handleGhostTextShown(e, n) {
+  y = n.index;
+  if (
+    !v.find((e) => e.index === n.index) &&
+    (v.push(n), n.telemetry && n.displayText)
+  ) {
+    const r = !(n.resultType === getghosttext.ResultType.Network);
+    exports.ghostTextLogger.debug(
+      e,
+      `[${n.telemetry.properties.headerRequestId}] shown choiceIndex: ${n.telemetry.properties.choiceIndex}, fromCache ${r}`
+    ),
+      (n.telemetry.measurements.compCharLen = n.displayText.length),
+      (0, telemetryutils.telemetryShown)(e, "ghostText", n.telemetry, r);
+  }
+}
+async function handleGhostTextPostInsert(e, n) {
+  resetStateForLastCompletion();
+  exports.ghostTextLogger.debug(e, "Ghost text post insert");
+  if (
+    n.telemetry &&
+    n.uri &&
+    n.displayText &&
+    void 0 !== n.insertOffset &&
+    n.range &&
+    n.id
+  ) {
+    const t = n.telemetry.extendedBy(
+      {
+        compType: _ ? "partial" : "full",
+      },
+      {
+        compCharLen: n.displayText.length,
       }
-    }
+    );
+    resetPartialAcceptanceState(),
+      await (0, tasks.postInsertionTasks)(
+        e,
+        "ghostText",
+        n.displayText,
+        n.insertOffset,
+        n.uri,
+        t,
+        n.id,
+        n.range.start
+      );
   }
-  function T() {
-    v = [], g = void 0, m = void 0;
-  }
-  function S() {
-    _ = void 0;
-  }
-  function x(e, n) {
-    if (y = n.index, !v.find(e => e.index === n.index) && (v.push(n), n.telemetry && n.displayText)) {
-      const r = !(n.resultType === s.ResultType.Network);
-      exports.ghostTextLogger.debug(e, `[${n.telemetry.properties.headerRequestId}] shown choiceIndex: ${n.telemetry.properties.choiceIndex}, fromCache ${r}`), n.telemetry.measurements.compCharLen = n.displayText.length, (0, a.telemetryShown)(e, "ghostText", n.telemetry, r);
-    }
-  }
-  async function C(e, n) {
-    if (T(), exports.ghostTextLogger.debug(e, "Ghost text post insert"), n.telemetry && n.uri && n.displayText && void 0 !== n.insertOffset && n.range && n.id) {
-      const t = n.telemetry.extendedBy({
-        compType: _ ? "partial" : "full"
-      }, {
-        compCharLen: n.displayText.length
-      });
-      S(), await (0, l.postInsertionTasks)(e, "ghostText", n.displayText, n.insertOffset, n.uri, t, n.id, n.range.start);
-    }
-  }
-  exports.handlePartialGhostTextPostInsert = w, exports.resetStateForLastCompletion = T, exports.resetPartialAcceptanceState = S, exports.handleGhostTextShown = x, exports.handleGhostTextPostInsert = C, exports.registerGhostText = function (e) {
-    const t = new E(e),
-      n = r.languages.registerInlineCompletionItemProvider({
-        pattern: "**"
-      }, t),
-      i = r.commands.registerCommand(h, async t => C(e, t));
-    e.get(p.VsCodeExtensionContext).subscriptions.push(n, i);
-  };
+}
+exports.handlePartialGhostTextPostInsert = handlePartialGhostTextPostInsert;
+exports.resetStateForLastCompletion = resetStateForLastCompletion;
+exports.resetPartialAcceptanceState = resetPartialAcceptanceState;
+exports.handleGhostTextShown = handleGhostTextShown;
+exports.handleGhostTextPostInsert = handleGhostTextPostInsert;
+exports.registerGhostText = function (context) {
+  e.get(main.VsCodeExtensionContext).subscriptions.push(
+    vscode.languages.registerInlineCompletionItemProvider(
+      {
+        pattern: "**",
+      },
+      new InlineCompletionItemProvider(contexte)
+    ),
+    vscode.commands.registerCommand("_ghostTextPostInsert", async (t) =>
+      handleGhostTextPostInsert(contexte, t)
+    )
+  );
+};

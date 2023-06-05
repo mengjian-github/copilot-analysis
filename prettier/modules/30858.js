@@ -2,8 +2,8 @@ Object.defineProperty(exports, "__esModule", {
   value: !0
 });
 exports.call = void 0;
-const r = require(30362);
-const i = require(82279);
+const token = require("./token");
+const request = require("./request");
 const o = require(91465);
 const s = require(77032);
 const a = require(47302);
@@ -14,7 +14,7 @@ exports.call = async function (e, t, n, u) {
   let d;
   let h;
   try {
-    p = (await e.get(r.CopilotTokenManager).getCopilotToken(e)).token;
+    p = (await e.get(token.CopilotTokenManager).getCopilotToken(e)).token;
   } catch (e) {
     a.ConnectionState.setDisconnected();
     return l.createErrorResponse(401, l.ErrorMessages[l.ErrorReasons.Unauthorized]);
@@ -23,7 +23,7 @@ exports.call = async function (e, t, n, u) {
   if (a.ConnectionState.isRetrying()) return (0, l.createErrorResponse)(600, `Attempting to reconnect to ${o.CodeQuoteFeatureName} service.`);
   if (a.ConnectionState.isDisconnected()) return l.createErrorResponse(601, `${o.CodeQuoteFeatureName} service is offline.`);
   try {
-    d = await e.get(i.Fetcher).fetch(`https://origin-tracker.githubusercontent.com/twirp/github.snippy.Snippy/${t}`, {
+    d = await e.get(request.Fetcher).fetch(`https://origin-tracker.githubusercontent.com/twirp/github.snippy.Snippy/${t}`, {
       method: n.method,
       body: "POST" === n.method ? JSON.stringify(n.body) : void 0,
       headers: {

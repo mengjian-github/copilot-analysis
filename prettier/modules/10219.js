@@ -2,7 +2,7 @@ Object.defineProperty(exports, "__esModule", {
   value: !0
 });
 exports.ExpConfig = exports.ExpTreatmentVariables = void 0;
-const r = require(6333);
+const telemetry = require("./telemetry");
 const i = require(46500);
 var o;
 (o = exports.ExpTreatmentVariables || (exports.ExpTreatmentVariables = {})).AA = "copilotaa";
@@ -50,7 +50,7 @@ class ExpConfig {
     this.features = n;
   }
   static createFallbackConfig(e, t) {
-    r.telemetryExpProblem(e, {
+    telemetry.telemetryExpProblem(e, {
       reason: t
     });
     return this.createEmptyConfig();

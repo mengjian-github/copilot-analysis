@@ -1,4 +1,4 @@
-export const NameMap = {
+module.exports = {
     23055: {
         name: 'utils',
         path: './utils'
@@ -202,5 +202,29 @@ export const NameMap = {
     49263: {
         name: 'extensionworkspacefilesystem',
         path: './extension-workspace-file-system'
+    },
+    42218: {
+        name: 'completionsfromghost',
+        path: './completions-from-ghost'
+    },
+    89334: {
+        name: 'getghosttext',
+        path: './get-ghost-text'
+    },
+    40750: {
+        name: 'telemetryutils',
+        path: './telemetry-utils'
+    },
+    57017: {
+        name: 'tasks',
+        path: './tasks'
+    },
+    91238: {
+        name: 'main',
+        path: './main'
+    },
+    54540: {
+       name: 'ignoredocument',
+         path: './ignore-document'
     }
 }

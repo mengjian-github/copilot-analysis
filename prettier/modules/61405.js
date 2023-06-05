@@ -2,16 +2,16 @@ Object.defineProperty(exports, "__esModule", {
   value: !0
 });
 exports.onDidChangeConfigurationHandler = exports.VSCodeNetworkConfiguration = void 0;
-const r = require(89496);
+const vscode = require("vscode");
 const i = require(44197);
-const o = require(42512);
-const s = require(30047);
+const network = require("./network");
+const session = require("./session");
 const a = "github-enterprise";
 const c = "https://github.com";
 function l() {
-  return r.workspace.getConfiguration(i.CopilotConfigPrefix).get("advanced")?.authProvider === s.AuthProviderId.GitHubEnterprise ? r.workspace.getConfiguration(a).get("uri") ?? c : c;
+  return vscode.workspace.getConfiguration(i.CopilotConfigPrefix).get("advanced")?.authProvider === session.AuthProviderId.GitHubEnterprise ? vscode.workspace.getConfiguration(a).get("uri") ?? c : c;
 }
-class VSCodeNetworkConfiguration extends o.DefaultNetworkConfiguration {
+class VSCodeNetworkConfiguration extends network.DefaultNetworkConfiguration {
   constructor() {
     super(l());
   }
@@ -22,6 +22,6 @@ class VSCodeNetworkConfiguration extends o.DefaultNetworkConfiguration {
 exports.VSCodeNetworkConfiguration = VSCodeNetworkConfiguration;
 exports.onDidChangeConfigurationHandler = function (e, t) {
   if (e.affectsConfiguration(`${i.CopilotConfigPrefix}.advanced`) || e.affectsConfiguration(`${a}.uri`)) {
-    t.get(o.NetworkConfiguration).updateBaseUrl(t);
+    t.get(network.NetworkConfiguration).updateBaseUrl(t);
   }
 };

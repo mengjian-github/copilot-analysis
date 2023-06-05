@@ -2,9 +2,9 @@ Object.defineProperty(exports, "__esModule", {
   value: !0
 });
 exports.CodeQuote = void 0;
-const r = require(89496);
+const vscode = require("vscode");
 const i = require(1402);
-const o = require(60070);
+const env = require("./env");
 const s = require(72031);
 const a = require(78179);
 const c = require(91465);
@@ -26,7 +26,7 @@ exports.CodeQuote = class {
       if (this.subscriptions) {
         h.ConnectionState.setConnected();
         p.codeQuoteLogger.info(this.ctx, `${c.CodeQuoteFeatureName} enabled`);
-        this.subscriptions = r.Disposable.from(d.registerMatchPanel(this.ctx), a.registerCodeQuoteStatusReporter(this.ctx), l.registerCopilotEnvelopeListener(this.ctx), u.registerPostInsertionListener(this.ctx), s.registerCodeQuoteCompletionTracker(this.ctx));
+        this.subscriptions = vscode.Disposable.from(d.registerMatchPanel(this.ctx), a.registerCodeQuoteStatusReporter(this.ctx), l.registerCopilotEnvelopeListener(this.ctx), u.registerPostInsertionListener(this.ctx), s.registerCodeQuoteCompletionTracker(this.ctx));
       }
     };
     this.tokenNotifier = e.get(i.CopilotTokenNotifier);
@@ -36,7 +36,7 @@ exports.CodeQuote = class {
     this.tokenNotifier.off("onCopilotToken", this.onCopilotToken);
   }
   register() {
-    if (o.isRunningInTest(this.ctx)) {
+    if (env.isRunningInTest(this.ctx)) {
       this.tokenNotifier.on("onCopilotToken", this.onCopilotToken);
     }
     return this;

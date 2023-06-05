@@ -3,18 +3,18 @@ Object.defineProperty(exports, "__esModule", {
 });
 exports.getRetrievalOptions = exports.queryRetrievalSnippets = exports.lineBasedSnippetMatcher = exports.breakUpLongLines = exports.buildSnippetMatcher = exports.RETRIEVAL_CACHE_SNIPPET_MATCHERS = void 0;
 const r = require(64063);
-const i = require(23055);
+const utils = require("./utils");
 const o = require(6113);
 const s = require(42600);
-const a = require(30362);
+const token = require("./token");
 const c = require(43076);
 const l = require(59189);
-const u = require(29899);
-const p = require(82279);
+const logger = require("./logger");
+const request = require("./request");
 const d = require(20003);
 const h = require(35120);
-const f = require(6333);
-const m = new u.Logger(u.LogLevel.DEBUG, "retrieval");
+const telemetry = require("./telemetry");
+const m = new logger.Logger(logger.LogLevel.DEBUG, "retrieval");
 function g(e) {
   return {
     snippet: e.text.before + e.text.snippet + e.text.after,
@@ -135,7 +135,7 @@ exports.queryRetrievalSnippets = async function (e, t, n) {
   };
   if ("pending" === o.state) {
     (function (e, t) {
-      f.telemetry(e, "retrieval.debounced", f.TelemetryData.createAndMarkAsIssued({
+      telemetry.telemetry(e, "retrieval.debounced", telemetry.TelemetryData.createAndMarkAsIssued({
         pendingRetrievalId: t
       }), !1);
     })(e, o.retrievalId);
@@ -167,7 +167,7 @@ exports.queryRetrievalSnippets = async function (e, t, n) {
             numSnippetsFromServer: n?.results?.length || -1,
             numFilteredSnippets: r.length
           };
-          f.telemetry(e, "retrieval.retrieved", f.TelemetryData.createAndMarkAsIssued({
+          telemetry.telemetry(e, "retrieval.retrieved", telemetry.TelemetryData.createAndMarkAsIssued({
             retrievalId: t
           }, {
             ...i,
@@ -175,7 +175,7 @@ exports.queryRetrievalSnippets = async function (e, t, n) {
             elapsedKnnNs: n?.metadata?.elapsed_knn_ns || -1,
             elapsedFindSourceNs: n?.metadata?.elapsed_find_source_ns || -1
           }), !1);
-          f.telemetry(e, "retrieval.retrieved", f.TelemetryData.createAndMarkAsIssued({
+          telemetry.telemetry(e, "retrieval.retrieved", telemetry.TelemetryData.createAndMarkAsIssued({
             retrievalId: t,
             snippets: JSON.stringify(r.map(e => {
               const {
@@ -194,10 +194,10 @@ exports.queryRetrievalSnippets = async function (e, t, n) {
       } catch (t) {
         m.exception(e, t, "Error while processing retrieval response");
         (function (e, t, n, r) {
-          f.telemetry(e, "retrieval.errorProcess", f.TelemetryData.createAndMarkAsIssued({
+          telemetry.telemetry(e, "retrieval.errorProcess", telemetry.TelemetryData.createAndMarkAsIssued({
             retrievalId: t
           }), !1);
-          f.telemetry(e, "retrieval.errorProcess", f.TelemetryData.createAndMarkAsIssued({
+          telemetry.telemetry(e, "retrieval.errorProcess", telemetry.TelemetryData.createAndMarkAsIssued({
             retrievalId: t,
             body: JSON.stringify(n) ?? "unknown",
             error: JSON.stringify(r) ?? "unknown"
@@ -207,7 +207,7 @@ exports.queryRetrievalSnippets = async function (e, t, n) {
     }(e, t, o.retrievalId, o.retrievalContext, o.response, o.retrievalOptions);
   }
   const c = function (e, t) {
-    const n = i.getCursorContext(e, t);
+    const n = utils.getCursorContext(e, t);
     return {
       querySnippet: n.context,
       offset: e.offset,
@@ -222,8 +222,8 @@ exports.queryRetrievalSnippets = async function (e, t, n) {
         retrievalLineCount: n.lineCount,
         cursorPos: t.offset
       };
-      f.telemetry(e, "retrieval.tooShortContext", f.TelemetryData.createAndMarkAsIssued({}, r), !1);
-      f.telemetry(e, "retrieval.tooShortContext", f.TelemetryData.createAndMarkAsIssued({
+      telemetry.telemetry(e, "retrieval.tooShortContext", telemetry.TelemetryData.createAndMarkAsIssued({}, r), !1);
+      telemetry.telemetry(e, "retrieval.tooShortContext", telemetry.TelemetryData.createAndMarkAsIssued({
         file: t.uri,
         retrievalContext: n.querySnippet
       }, r), !0);
@@ -234,7 +234,7 @@ exports.queryRetrievalSnippets = async function (e, t, n) {
     const i = Date.now();
     const o = t.get(n.uri, r);
     (function (e, t, n) {
-      f.telemetry(e, "retrieval.cacheLookup", f.TelemetryData.createAndMarkAsIssued({
+      telemetry.telemetry(e, "retrieval.cacheLookup", telemetry.TelemetryData.createAndMarkAsIssued({
         cacheHit: t ? "true" : "false"
       }, {
         cacheLookupElapsed: n
@@ -248,7 +248,7 @@ exports.queryRetrievalSnippets = async function (e, t, n) {
       state: "pending",
       retrievalId: i
     });
-    const o = (await e.get(a.CopilotTokenManager).getCopilotToken(e)).token;
+    const o = (await e.get(token.CopilotTokenManager).getCopilotToken(e)).token;
     var c;
     !function (e, t, n, r, i) {
       const o = {
@@ -256,16 +256,16 @@ exports.queryRetrievalSnippets = async function (e, t, n) {
         retrievalLineCount: r.lineCount,
         cursorPos: t.offset
       };
-      f.telemetry(e, "retrieval.issued", f.TelemetryData.createAndMarkAsIssued({
+      telemetry.telemetry(e, "retrieval.issued", telemetry.TelemetryData.createAndMarkAsIssued({
         retrievalId: n
       }, o), !1);
-      f.telemetry(e, "retrieval.issued", f.TelemetryData.createAndMarkAsIssued({
+      telemetry.telemetry(e, "retrieval.issued", telemetry.TelemetryData.createAndMarkAsIssued({
         retrievalId: n,
         file: t.uri,
         retrievalContext: r.querySnippet
       }, o), !0);
     }(e, t, i, n);
-    p.postRequest(e, (c = r.repoNwo, d.OPENAI_PROXY_HOST + `/v0/retrieval?repo=${c}`), o, void 0, s.v4(), {
+    request.postRequest(e, (c = r.repoNwo, d.OPENAI_PROXY_HOST + `/v0/retrieval?repo=${c}`), o, void 0, s.v4(), {
       query: n.querySnippet,
       options: {
         ...r.server
@@ -281,14 +281,14 @@ exports.queryRetrievalSnippets = async function (e, t, n) {
         retrievalOptions: r
       });
       (function (e, t, n) {
-        f.telemetry(e, "retrieval.response", f.TelemetryData.createAndMarkAsIssued({
+        telemetry.telemetry(e, "retrieval.response", telemetry.TelemetryData.createAndMarkAsIssued({
           retrievalId: t
         }), !1);
       })(e, i);
     }).catch(n => {
       m.info(e, `Retrieval request for ${t.uri} failed. Error: ${n}`);
       (function (e, t, n) {
-        f.telemetry(e, "retrieval.error", f.TelemetryData.createAndMarkAsIssued({
+        telemetry.telemetry(e, "retrieval.error", telemetry.TelemetryData.createAndMarkAsIssued({
           retrievalId: t,
           error: JSON.stringify(n) ?? "unknown"
         }), !1);
@@ -298,14 +298,14 @@ exports.queryRetrievalSnippets = async function (e, t, n) {
       });
     });
   }(e, t, c, n), []) : (function (e, t, n) {
-    f.telemetry(e, "retrieval.cacheHit", f.TelemetryData.createAndMarkAsIssued({
+    telemetry.telemetry(e, "retrieval.cacheHit", telemetry.TelemetryData.createAndMarkAsIssued({
       cachedRetrievalId: t
     }, {
       numSnippetsReturned: n.length
     }), !1);
   }(e, l.retrievalId, l.snippets), m.debug(e, `Retrieval cache hit for ${t.uri}`), l.snippets.map(e => ({
-    provider: i.SnippetProvider.Retrieval,
-    semantics: i.SnippetSemantics.Snippet,
+    provider: utils.SnippetProvider.Retrieval,
+    semantics: utils.SnippetSemantics.Snippet,
     ...e
   })));
 };

@@ -2,18 +2,18 @@ Object.defineProperty(exports, "__esModule", {
   value: !0
 });
 exports.extractPrompt = exports.extractPromptForNotebook = exports.extractPromptForSource = exports.trimLastLine = exports._copilotNotAvailable = exports._contextTooShort = exports.MIN_PROMPT_CHARS = void 0;
-const r = require(23055);
-const i = require(51133);
+const utils = require("./utils");
+const config = require("./config");
 const o = require(54913);
-const s = require(21839);
+const utils2 = require("./utils2");
 const a = require(59189);
-const c = require(6333);
-const l = require(93136);
+const telemetry = require("./telemetry");
+const documentmanager = require("./document-manager");
 const u = require(31451);
-const p = require(82533);
-const d = require(50766);
+const promptlibproxy = require("./prompt-lib-proxy");
+const repo = require("./repo");
 const h = require(51470);
-const f = require(95618);
+const symbol = require("./symbol");
 function trimLastLine(e) {
   const t = e.split("\n");
   const n = t[t.length - 1];
@@ -24,12 +24,12 @@ function trimLastLine(e) {
 }
 async function extractPromptForSource(e, n, l, g, y, _) {
   if (e.get(o.CopilotIgnoreManager).isIgnored(y)) return exports._copilotNotAvailable;
-  const v = d.extractRepoInfoInBackground(e, y.fsPath);
-  const b = d.tryGetGitHubNWO(v) ?? "";
-  const E = await d.getUserKind(e);
+  const v = repo.extractRepoInfoInBackground(e, y.fsPath);
+  const b = repo.tryGetGitHubNWO(v) ?? "";
+  const E = await repo.getUserKind(e);
   const w = {
     repoNwo: b,
-    dogFood: d.getDogFood(v),
+    dogFood: repo.getDogFood(v),
     userKind: E,
     fileType: _
   };
@@ -54,14 +54,14 @@ async function extractPromptForSource(e, n, l, g, y, _) {
       relativePath: o,
       languageId: m
     };
-    const y = d.extractRepoInfoInBackground(e, l.fsPath);
+    const y = repo.extractRepoInfoInBackground(e, l.fsPath);
     const _ = {
-      repoNwo: d.tryGetGitHubNWO(y) ?? "",
-      userKind: await d.getUserKind(e),
-      dogFood: d.getDogFood(y),
+      repoNwo: repo.tryGetGitHubNWO(y) ?? "",
+      userKind: await repo.getUserKind(e),
+      dogFood: repo.getDogFood(y),
       fileType: m
     };
-    const v = (await e.get(a.Features).maxPromptCompletionTokens(_)) - i.getConfig(e, i.ConfigKey.SolutionLength);
+    const v = (await e.get(a.Features).maxPromptCompletionTokens(_)) - config.getConfig(e, config.ConfigKey.SolutionLength);
     const b = await e.get(a.Features).neighboringTabsOption(_);
     const E = await e.get(a.Features).neighboringSnippetTypes(_);
     const w = await e.get(a.Features).numberOfSnippets(_);
@@ -91,7 +91,7 @@ async function extractPromptForSource(e, n, l, g, y, _) {
       P = t.docs;
       N = t.neighborSource;
     } catch (t) {
-      c.telemetryException(e, t, "prompt.getPromptForSource.exception");
+      telemetry.telemetryException(e, t, "prompt.getPromptForSource.exception");
     }
     let O = [];
     const R = await h.getRetrievalOptions(e, _);
@@ -99,7 +99,7 @@ async function extractPromptForSource(e, n, l, g, y, _) {
       O = await h.queryRetrievalSnippets(e, g, R);
     }
     if (await e.get(a.Features).symbolDefinitionStrategy(_)) {
-      const t = await (0, f.getSymbolDefSnippets)(e, g);
+      const t = await (0, symbol.getSymbolDefSnippets)(e, g);
       O.push(...t);
     }
     const M = await e.get(a.Features).suffixPercent(_);
@@ -113,14 +113,14 @@ async function extractPromptForSource(e, n, l, g, y, _) {
         fimSuffixLengthThreshold: D
       };
     }
-    const B = e.get(r.FileSystem);
+    const B = e.get(utils.FileSystem);
     let F;
     const j = new Map();
-    for (const e of s.cursorHistoryManager.lineCursorHistory.keys()) j.set(e, s.cursorHistoryManager.lineCursorHistory.get(e) ?? new Map());
+    for (const e of utils2.cursorHistoryManager.lineCursorHistory.keys()) j.set(e, utils2.cursorHistoryManager.lineCursorHistory.get(e) ?? new Map());
     try {
-      F = await p.getPrompt(B, g, k, P, O, j);
+      F = await promptlibproxy.getPrompt(B, g, k, P, O, j);
     } catch (t) {
-      throw await c.telemetryException(e, t, "prompt.getPromptForSource.exception"), t;
+      throw await telemetry.telemetryException(e, t, "prompt.getPromptForSource.exception"), t;
     }
     return {
       neighborSource: N,
@@ -147,14 +147,14 @@ async function extractPromptForSource(e, n, l, g, y, _) {
   };
 }
 async function y(e, t, n) {
-  const r = await e.get(l.TextDocumentManager).getRelativePath(t);
+  const r = await e.get(documentmanager.TextDocumentManager).getRelativePath(t);
   return extractPromptForSource(e, t.getText(), t.offsetAt(n), r, t.uri, t.languageId);
 }
 async function extractPromptForNotebook(e, t, n, i) {
-  const o = d.extractRepoInfoInBackground(e, t.uri.fsPath);
-  const s = d.tryGetGitHubNWO(o) ?? "";
-  const c = await d.getUserKind(e);
-  const p = d.getDogFood(o);
+  const o = repo.extractRepoInfoInBackground(e, t.uri.fsPath);
+  const s = repo.tryGetGitHubNWO(o) ?? "";
+  const c = await repo.getUserKind(e);
+  const p = repo.getDogFood(o);
   const h = await e.get(a.Features).neighboringLanguageType({
     repoNwo: s,
     userKind: c,
@@ -167,11 +167,11 @@ async function extractPromptForNotebook(e, t, n, i) {
     const s = o.length > 0 ? o.map(e => function (e, t) {
       const n = e.document.languageId;
       const i = e.document.getText();
-      return n === t ? i : r.commentBlockAsSingles(i, t);
+      return n === t ? i : utils.commentBlockAsSingles(i, t);
     }(e, f.document.languageId)).join("\n\n") + "\n\n" : "";
     const a = s + t.getText();
     const c = s.length + t.offsetAt(i);
-    const p = await e.get(l.TextDocumentManager).getRelativePath(t);
+    const p = await e.get(documentmanager.TextDocumentManager).getRelativePath(t);
     return extractPromptForSource(e, a, c, p, t.uri, f.document.languageId);
   }
   return y(e, t, i);
@@ -187,6 +187,6 @@ exports.trimLastLine = trimLastLine;
 exports.extractPromptForSource = extractPromptForSource;
 exports.extractPromptForNotebook = extractPromptForNotebook;
 exports.extractPrompt = function (e, t, n) {
-  const r = e.get(l.TextDocumentManager).findNotebook(t);
+  const r = e.get(documentmanager.TextDocumentManager).findNotebook(t);
   return void 0 === r ? y(e, t, n) : extractPromptForNotebook(e, t, r, n);
 };

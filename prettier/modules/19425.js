@@ -2,24 +2,24 @@ Object.defineProperty(exports, "__esModule", {
   value: !0
 });
 exports.VSCodeEditorInfo = exports.VSCodeConfigProvider = void 0;
-const r = require(89496);
-const i = require(51133);
+const vscode = require("vscode");
+const config = require("./config");
 const o = require(44197);
 const s = require(4147);
 function a(e) {
   return "string" == typeof e ? e : JSON.stringify(e);
 }
-class VSCodeConfigProvider extends i.ConfigProvider {
+class VSCodeConfigProvider extends config.ConfigProvider {
   getConfigKeyFromObject(e, t) {
     const n = this.config[e][t];
-    return void 0 === n ? i.getConfigDefaultForObjectKey(e, t) : n;
+    return void 0 === n ? config.getConfigDefaultForObjectKey(e, t) : n;
   }
   constructor() {
     super();
-    this.config = r.workspace.getConfiguration(o.CopilotConfigPrefix);
-    r.workspace.onDidChangeConfiguration(e => {
+    this.config = vscode.workspace.getConfiguration(o.CopilotConfigPrefix);
+    vscode.workspace.onDidChangeConfiguration(e => {
       if (e.affectsConfiguration(o.CopilotConfigPrefix)) {
-        this.config = r.workspace.getConfiguration(o.CopilotConfigPrefix);
+        this.config = vscode.workspace.getConfiguration(o.CopilotConfigPrefix);
       }
     });
   }
@@ -54,23 +54,23 @@ class VSCodeConfigProvider extends i.ConfigProvider {
   getLanguageConfig(e, t) {
     const n = this.getConfig(e);
     if (void 0 === t) {
-      const e = r.window.activeTextEditor;
+      const e = vscode.window.activeTextEditor;
       t = e && e.document.languageId;
     }
     return t && t in n ? n[t] : n["*"];
   }
   updateEnabledConfig(e, t, n) {
-    const r = e.get(i.ConfigProvider).getConfig(i.ConfigKey.Enable);
+    const r = e.get(config.ConfigProvider).getConfig(config.ConfigKey.Enable);
     r[t] = n;
-    return this.config.update(i.ConfigKey.Enable, r, !0);
+    return this.config.update(config.ConfigKey.Enable, r, !0);
   }
 }
 exports.VSCodeConfigProvider = VSCodeConfigProvider;
-class VSCodeEditorInfo extends i.EditorAndPluginInfo {
+class VSCodeEditorInfo extends config.EditorAndPluginInfo {
   getEditorInfo() {
     return {
       name: "vscode",
-      version: r.version
+      version: vscode.version
     };
   }
   getEditorPluginInfo() {

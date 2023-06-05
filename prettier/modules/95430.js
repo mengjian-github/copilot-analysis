@@ -2,7 +2,7 @@ Object.defineProperty(exports, "__esModule", {
   value: !0
 });
 exports.registerCopilotEnvelopeListener = void 0;
-const r = require(89496);
+const vscode = require("vscode");
 const i = require(94777);
 const o = require(68446);
 const s = require(47302);
@@ -16,7 +16,7 @@ exports.registerCopilotEnvelopeListener = function (e) {
   const c = e.get(i.HeaderContributors);
   c.add(a);
   t();
-  return new r.Disposable(() => {
+  return new vscode.Disposable(() => {
     c.remove(a);
     n.dispose();
   });

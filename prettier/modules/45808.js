@@ -4,10 +4,10 @@ Object.defineProperty(exports, "__esModule", {
 exports.HelixFetcher = void 0;
 const r = require(79825);
 const i = require(6149);
-const o = require(51133);
-const s = require(82279);
+const config = require("./config");
+const request = require("./request");
 const a = require(25704);
-class HelixFetcher extends s.Fetcher {
+class HelixFetcher extends request.Fetcher {
   constructor(e) {
     super();
     this.ctx = e;
@@ -57,7 +57,7 @@ class HelixFetcher extends s.Fetcher {
     return super.rejectUnauthorized;
   }
   createFetchApi(e) {
-    const t = e.get(o.BuildInfo);
+    const t = e.get(config.BuildInfo);
     if (!1 === super.rejectUnauthorized) {
       process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
     }
@@ -75,7 +75,7 @@ class HelixFetcher extends s.Fetcher {
     };
     await this.certificateConfigurator.applyToRequestOptions(n);
     const r = await this.fetchApi.fetch(e, n);
-    return new s.Response(r.status, r.statusText, r.headers, () => r.text(), () => r.json(), async () => r.body);
+    return new request.Response(r.status, r.statusText, r.headers, () => r.text(), () => r.json(), async () => r.body);
   }
   disconnectAll() {
     return this.fetchApi.reset();

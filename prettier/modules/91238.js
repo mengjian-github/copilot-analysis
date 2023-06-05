@@ -2,179 +2,179 @@ Object.defineProperty(exports, "__esModule", {
   value: !0
 });
 exports.onDeactivate = exports.VsCodeExtensionContext = exports.createExtensionContext = exports.activate = void 0;
-const r = require(23055);
+const utils = require("./utils");
 require(20406);
-const i = require(89496);
-const o = require(30362);
-const s = require(84936);
-const a = require(13688);
-const c = require(51133);
-const l = require(79408);
-const u = require(21839);
-const p = require(85251);
-const d = require(69748);
-const h = require(55600);
-const f = require(29899);
-const m = require(42512);
-const g = require(82279);
-const y = require(41547);
-const _ = require(86722);
-const v = require(82533);
-const b = require(50766);
-const E = require(95618);
-const w = require(6333);
-const T = require(89176);
-const S = require(10956);
-const x = require(60070);
-const C = require(28771);
-const I = require(16403);
-const A = require(93136);
-const k = require(47057);
-const P = require(88560);
-const N = require(63197);
-const O = require(91862);
-const R = require(90622);
-const M = require(19425);
-const L = require(73060);
-const D = require(59047);
-const B = require(24425);
-const F = require(16267);
-const j = require(85863);
-const U = require(62130);
-const $ = require(65849);
-const V = require(86857);
-const H = require(61405);
-const q = require(29477);
-const z = require(30047);
+const vscode = require("vscode");
+const token = require("./token");
+const commitfileresolver = require("./commit-file-resolver");
+const production = require("./production");
+const config = require("./config");
+const errorhandler = require("./error-handler");
+const utils2 = require("./utils2");
+const experiment = require("./experiment");
+const abtest = require("./abtest");
+const language = require("./language");
+const logger = require("./logger");
+const network = require("./network");
+const request = require("./request");
+const notification = require("./notification");
+const reporter = require("./status-reporter");
+const promptlibproxy = require("./prompt-lib-proxy");
+const repo = require("./repo");
+const symbol = require("./symbol");
+const telemetry = require("./telemetry");
+const appinsights = require("./app-insights");
+const token2 = require("./token2");
+const env = require("./env");
+const test = require("./test");
+const locationfactory = require("./location-factory");
+const documentmanager = require("./document-manager");
+const realurlopener = require("./real-url-opener");
+const workspacefilesystem = require("./workspace-file-system");
+const ghosttext = require("./ghost-text");
+const token3 = require("./token3");
+const codequote = require("./code-quote");
+const vscodeutils = require("./vscode-utils");
+const consts = require("./const");
+const install = require("./install");
+const ingnore = require("./ignore");
+const panel = require("./panel");
+const report2 = require("./report2");
+const experimentfilter = require("./experiment-filter");
+const extensionapi = require("./extension-api");
+const extensionfilesystem = require("./extension-file-system");
+const ondidchangeconfig = require("./on-did-change-config");
+const proxy = require("./proxy");
+const session = require("./session");
 const K = require(87254);
-const G = require(39813);
-const W = require(64428);
-const Q = require(68129);
-const Z = require(70385);
-const X = require(41480);
-const Y = require(49263);
-const J = i.window.createOutputChannel("GitHub Copilot");
+const decomposehovertext = require("./decompose-hover-text");
+const telemetryrepo = require("./telemetry-repo");
+const extensionlocationfactory = require("./extension-location-factory");
+const extensiontextdocumentmanager = require("./extension-text-document-manager");
+const extensioncommitfileresolver = require("./extension-commit-file-resolver");
+const extensionworkspacefilesystem = require("./extension-workspace-file-system");
+const J = vscode.window.createOutputChannel("GitHub Copilot");
 async function ee(e) {
-  const t = a.createProductionContext(new M.VSCodeConfigProvider());
-  const n = new f.MultiLog([new f.ConsoleLog(console), new f.OutputChannelLog(J)]);
-  t.forceSet(f.LogTarget, n);
-  t.set(c.EditorAndPluginInfo, new M.VSCodeEditorInfo());
-  q.initProxyEnvironment(t.get(g.Fetcher), process.env);
-  t.set(y.NotificationSender, new O.ExtensionNotificationSender());
-  t.set(c.EditorSession, new c.EditorSession(i.env.sessionId, i.env.machineId));
+  const t = production.createProductionContext(new vscodeutils.VSCodeConfigProvider());
+  const n = new logger.MultiLog([new logger.ConsoleLog(console), new logger.OutputChannelLog(J)]);
+  t.forceSet(logger.LogTarget, n);
+  t.set(config.EditorAndPluginInfo, new vscodeutils.VSCodeEditorInfo());
+  proxy.initProxyEnvironment(t.get(request.Fetcher), process.env);
+  t.set(notification.NotificationSender, new token3.ExtensionNotificationSender());
+  t.set(config.EditorSession, new config.EditorSession(vscode.env.sessionId, vscode.env.machineId));
   (function (e, t) {
     e.set(ne, t);
   })(t, e);
-  t.set(p.EditorExperimentFilters, new U.VSCodeEditorExperimentFilters());
-  p.setupExperimentationService(t);
-  t.set(E.SymbolDefinitionProvider, new G.ExtensionSymbolDefinitionProvider());
-  if (e.extensionMode === i.ExtensionMode.Test) {
-    t.forceSet(x.RuntimeMode, x.RuntimeMode.fromEnvironment(!0));
-    t.set(o.CopilotTokenManager, S.getTestingCopilotTokenManager());
-    t.forceSet(k.UrlOpener, new C.TestUrlOpener());
+  t.set(experiment.EditorExperimentFilters, new experimentfilter.VSCodeEditorExperimentFilters());
+  experiment.setupExperimentationService(t);
+  t.set(symbol.SymbolDefinitionProvider, new decomposehovertext.ExtensionSymbolDefinitionProvider());
+  if (e.extensionMode === vscode.ExtensionMode.Test) {
+    t.forceSet(env.RuntimeMode, env.RuntimeMode.fromEnvironment(!0));
+    t.set(token.CopilotTokenManager, token2.getTestingCopilotTokenManager());
+    t.forceSet(realurlopener.UrlOpener, new test.TestUrlOpener());
     await te(t, e, "copilot-test", !0);
   } else {
-    t.set(o.CopilotTokenManager, new O.VSCodeCopilotTokenManager());
-    t.forceSet(d.ExpConfigMaker, new d.ExpConfigFromTAS());
-    await te(t, e, e.extension.packageJSON.name, i.env.isTelemetryEnabled);
+    t.set(token.CopilotTokenManager, new token3.VSCodeCopilotTokenManager());
+    t.forceSet(abtest.ExpConfigMaker, new abtest.ExpConfigFromTAS());
+    await te(t, e, e.extension.packageJSON.name, vscode.env.isTelemetryEnabled);
   }
-  e.subscriptions.push(await B.registerCopilotIgnore(t));
-  t.set(I.LocationFactory, new Q.ExtensionLocationFactory());
-  t.set(A.TextDocumentManager, new Z.ExtensionTextDocumentManager(t));
-  t.set(P.WorkspaceFileSystem, new Y.ExtensionWorkspaceFileSystem());
-  t.set(s.CommitFileResolver, new X.ExtensionCommitFileResolver());
-  t.set(r.FileSystem, V.extensionFileSystem);
-  t.set(m.NetworkConfiguration, new H.VSCodeNetworkConfiguration());
+  e.subscriptions.push(await ingnore.registerCopilotIgnore(t));
+  t.set(locationfactory.LocationFactory, new extensionlocationfactory.ExtensionLocationFactory());
+  t.set(documentmanager.TextDocumentManager, new extensiontextdocumentmanager.ExtensionTextDocumentManager(t));
+  t.set(workspacefilesystem.WorkspaceFileSystem, new extensionworkspacefilesystem.ExtensionWorkspaceFileSystem());
+  t.set(commitfileresolver.CommitFileResolver, new extensioncommitfileresolver.ExtensionCommitFileResolver());
+  t.set(utils.FileSystem, extensionfilesystem.extensionFileSystem);
+  t.set(network.NetworkConfiguration, new ondidchangeconfig.VSCodeNetworkConfiguration());
   return t;
 }
 async function te(e, t, n, r) {
-  t.subscriptions.push(i.env.onDidChangeTelemetryEnabled(async n => {
-    await T.setupTelemetryReporters(e, t.extension.packageJSON.name, n && i.env.isTelemetryEnabled);
+  t.subscriptions.push(vscode.env.onDidChangeTelemetryEnabled(async n => {
+    await appinsights.setupTelemetryReporters(e, t.extension.packageJSON.name, n && vscode.env.isTelemetryEnabled);
   }));
-  await T.setupTelemetryReporters(e, n, r);
-  W.cleanupTelemetryReporters(e);
+  await appinsights.setupTelemetryReporters(e, n, r);
+  telemetryrepo.cleanupTelemetryReporters(e);
 }
 exports.activate = async function (e) {
   const t = await ee(e);
   if ("abortActivation" == (await async function (e) {
-    return "GitHub.copilot-nightly" === e.get(ne).extension.id && (l.registerDefaultHandlers(e, "vscode"), i.extensions.all.find(e => "GitHub.copilot" === e.id)) ? ("Uninstall" === (await i.window.showWarningMessage("To use GitHub Copilot Nightly you need to uninstall GitHub Copilot extension", "Uninstall")) && (await i.commands.executeCommand("workbench.extensions.uninstallExtension", "GitHub.copilot")), "abortActivation") : "continueActivation";
+    return "GitHub.copilot-nightly" === e.get(ne).extension.id && (errorhandler.registerDefaultHandlers(e, "vscode"), vscode.extensions.all.find(e => "GitHub.copilot" === e.id)) ? ("Uninstall" === (await vscode.window.showWarningMessage("To use GitHub Copilot Nightly you need to uninstall GitHub Copilot extension", "Uninstall")) && (await vscode.commands.executeCommand("workbench.extensions.uninstallExtension", "GitHub.copilot")), "abortActivation") : "continueActivation";
   }(t))) return;
   !function (e, t) {
     const n = new K.CopilotStatusBar(e, t);
-    W.registerCommandWithTelemetry(e, L.CMDToggleCopilot, () => {
+    telemetryrepo.registerCommandWithTelemetry(e, consts.CMDToggleCopilot, () => {
       n.toggleStatusBar();
     });
-    W.registerCommandWithTelemetry(e, L.CMDShowErrorMessage, () => {
+    telemetryrepo.registerCommandWithTelemetry(e, consts.CMDShowErrorMessage, () => {
       n.showErrorMessage();
     });
     e.get(ne).subscriptions.push(n.getStatusBarItem());
-    e.set(_.StatusReporter, n);
+    e.set(reporter.StatusReporter, n);
   }(t, J);
   (function (e) {
-    W.registerCommandWithTelemetry(e, L.CMDCollectDiagnostics, () => j.openDiagnosticReport(e));
-    W.registerCommandWithTelemetry(e, L.CMDSendFeedback, () => {
-      i.env.openExternal(i.Uri.parse("https://github.com/github/feedback/discussions/categories/copilot"));
+    telemetryrepo.registerCommandWithTelemetry(e, consts.CMDCollectDiagnostics, () => report2.openDiagnosticReport(e));
+    telemetryrepo.registerCommandWithTelemetry(e, consts.CMDSendFeedback, () => {
+      vscode.env.openExternal(vscode.Uri.parse("https://github.com/github/feedback/discussions/categories/copilot"));
     });
   })(t);
-  e.subscriptions.push(new R.CodeQuote(t).register());
+  e.subscriptions.push(new codequote.CodeQuote(t).register());
   e.subscriptions.push(re(t));
   const n = async () => {
-    const r = t.get(_.StatusReporter);
+    const r = t.get(reporter.StatusReporter);
     r.setProgress();
     try {
-      await t.get(o.CopilotTokenManager).getCopilotToken(t);
+      await t.get(token.CopilotTokenManager).getCopilotToken(t);
     } catch (e) {
       return void (e => {
         const o = e.message || e;
-        w.telemetryError(t, "activationFailed", w.TelemetryData.createAndMarkAsIssued({
+        telemetry.telemetryError(t, "activationFailed", telemetry.TelemetryData.createAndMarkAsIssued({
           reason: o
         }));
-        t.get(w.TelemetryReporters).deactivate();
-        const s = "GitHubLoginFailed" === o ? z.SESSION_LOGIN_MESSAGE : `GitHub Copilot could not connect to server. Extension activation failed: "${o}"`;
+        t.get(telemetry.TelemetryReporters).deactivate();
+        const s = "GitHubLoginFailed" === o ? session.SESSION_LOGIN_MESSAGE : `GitHub Copilot could not connect to server. Extension activation failed: "${o}"`;
         r.setError(s, n);
-        f.logger.error(t, s);
-        i.commands.executeCommand("setContext", "github.copilot.activated", !1);
+        logger.logger.error(t, s);
+        vscode.commands.executeCommand("setContext", "github.copilot.activated", !1);
       })(e);
     }
     r.forceNormal();
-    i.commands.executeCommand("setContext", "github.copilot.activated", !0);
-    B.checkFileOnLoad(t);
-    F.registerPanelSupport(t);
+    vscode.commands.executeCommand("setContext", "github.copilot.activated", !0);
+    ingnore.checkFileOnLoad(t);
+    panel.registerPanelSupport(t);
     (function (e) {
       try {
-        N.registerGhostText(e);
-        const t = i.workspace.getConfiguration();
+        ghosttext.registerGhostText(e);
+        const t = vscode.workspace.getConfiguration();
         if (void 0 === t.inspect("editor.inlineSuggest.enabled")?.globalValue) {
-          t.update("editor.inlineSuggest.enabled", !0, i.ConfigurationTarget.Global);
+          t.update("editor.inlineSuggest.enabled", !0, vscode.ConfigurationTarget.Global);
         }
       } catch (t) {
-        w.telemetryException(e, t, "registerGhostTextSupport");
+        telemetry.telemetryException(e, t, "registerGhostTextSupport");
       }
     })(t);
-    e.subscriptions.push(u.registerDocumentTracker(t));
-    e.subscriptions.push(u.registerCursorTracker(t));
-    D.installCopilotChatExtensionIfNeeded(t);
-    e.subscriptions.push(i.window.onDidChangeActiveTextEditor(e => e ? e.document.isUntitled || "file" === e.document.uri.scheme && b.extractRepoInfoInBackground(t, e.document.fileName) : void 0));
-    e.subscriptions.push(i.workspace.onDidOpenTextDocument(e => h.primeLanguageDetectionCache(t, e)));
-    e.subscriptions.push(i.workspace.onDidChangeConfiguration(e => H.onDidChangeConfigurationHandler(e, t)));
-    const s = e.extensionMode !== i.ExtensionMode.Development;
-    v.init(t, s, new f.Logger(f.LogLevel.INFO, "promptlib proxy"));
-    w.telemetry(t, "extension.activate");
+    e.subscriptions.push(utils2.registerDocumentTracker(t));
+    e.subscriptions.push(utils2.registerCursorTracker(t));
+    install.installCopilotChatExtensionIfNeeded(t);
+    e.subscriptions.push(vscode.window.onDidChangeActiveTextEditor(e => e ? e.document.isUntitled || "file" === e.document.uri.scheme && repo.extractRepoInfoInBackground(t, e.document.fileName) : void 0));
+    e.subscriptions.push(vscode.workspace.onDidOpenTextDocument(e => language.primeLanguageDetectionCache(t, e)));
+    e.subscriptions.push(vscode.workspace.onDidChangeConfiguration(e => ondidchangeconfig.onDidChangeConfigurationHandler(e, t)));
+    const s = e.extensionMode !== vscode.ExtensionMode.Development;
+    promptlibproxy.init(t, s, new logger.Logger(logger.LogLevel.INFO, "promptlib proxy"));
+    telemetry.telemetry(t, "extension.activate");
   };
-  i.authentication.onDidChangeSessions(async e => {
-    await z.onDidChangeSessionsHandler(e, t);
+  vscode.authentication.onDidChangeSessions(async e => {
+    await session.onDidChangeSessionsHandler(e, t);
   });
   await n();
-  return new $.CopilotExtensionApi(t);
+  return new extensionapi.CopilotExtensionApi(t);
 };
 exports.createExtensionContext = ee;
 class ne {}
 function re(e) {
   return {
     dispose: async () => {
-      await w.telemetry(e, "extension.deactivate");
-      e.get(w.TelemetryReporters).deactivate();
-      v.terminate();
+      await telemetry.telemetry(e, "extension.deactivate");
+      e.get(telemetry.TelemetryReporters).deactivate();
+      promptlibproxy.terminate();
     }
   };
 }

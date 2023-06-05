@@ -3,11 +3,11 @@ Object.defineProperty(exports, "__esModule", {
 });
 exports.completionsFromGhostTextResults = void 0;
 const r = require(42600);
-const i = require(16403);
-const o = require(89334);
+const locationfactory = require("./location-factory");
+const getghosttext = require("./get-ghost-text");
 const s = require(43286);
 exports.completionsFromGhostTextResults = function (e, t, n, a, c, l, u) {
-  const p = e.get(i.LocationFactory);
+  const p = e.get(locationfactory.LocationFactory);
   const d = a.lineAt(c);
   let h = t.map(e => {
     let t;
@@ -43,7 +43,7 @@ exports.completionsFromGhostTextResults = function (e, t, n, a, c, l, u) {
       resultType: n
     };
   });
-  if (n === o.ResultType.TypingAsSuggested && void 0 !== u) {
+  if (n === getghosttext.ResultType.TypingAsSuggested && void 0 !== u) {
     const e = h.find(e => e.index === u);
     if (e) {
       const t = h.filter(e => e.index !== u);

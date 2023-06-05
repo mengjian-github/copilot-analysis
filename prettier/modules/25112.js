@@ -29,12 +29,12 @@ Object.defineProperty(exports, "__esModule", {
 exports.CopilotIgnore = exports.COPILOT_IGNORE_FILE = exports.copilotIgnoreLogger = void 0;
 const u = require(15151);
 const p = require(71017);
-const d = require(29899);
-const h = require(6333);
+const logger = require("./logger");
+const telemetry = require("./telemetry");
 function f(e, t) {
   return e === t || (e.charAt(e.length - 1) !== p.sep && (e += p.sep), p.normalize(t).startsWith(p.normalize(e)));
 }
-exports.copilotIgnoreLogger = new d.Logger(d.LogLevel.INFO, "copilotIgnore");
+exports.copilotIgnoreLogger = new logger.Logger(logger.LogLevel.INFO, "copilotIgnore");
 exports.COPILOT_IGNORE_FILE = ".copilotignore";
 exports.CopilotIgnore = class {
   constructor(e) {
@@ -115,5 +115,5 @@ s = function () {
   return l(this, o, [...c(this, i, "f").keys()].sort((n, r) => (e[r] || (e[r] = t(r))) - (e[n] || (e[n] = t(n)))), "f");
 };
 a = function (e, t, n, r) {
-  h.telemetry(this.ctx, `copilotIgnore.${e}`, h.TelemetryData.createAndMarkAsIssued(t, n), r);
+  telemetry.telemetry(this.ctx, `copilotIgnore.${e}`, telemetry.TelemetryData.createAndMarkAsIssued(t, n), r);
 };

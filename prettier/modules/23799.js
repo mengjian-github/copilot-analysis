@@ -3,9 +3,9 @@ Object.defineProperty(exports, "__esModule", {
 });
 exports.CopilotListDocument = void 0;
 const r = require(70106);
-const i = require(51133);
+const config = require("./config");
 const o = require(22388);
-const s = require(6333);
+const telemetry = require("./telemetry");
 class CopilotListDocument {
   constructor(e, t, n, o, a, c) {
     this.targetDocument = n;
@@ -16,7 +16,7 @@ class CopilotListDocument {
     this._solutions = [];
     this._wasCancelled = !1;
     this._updateHandlers = new Set();
-    this.savedTelemetryData = s.TelemetryData.createAndMarkAsIssued();
+    this.savedTelemetryData = telemetry.TelemetryData.createAndMarkAsIssued();
     this.debouncedEventFire = r.debounce(10, () => this._updateHandlers.forEach(e => e(this._uri)));
     this.onDidResultUpdated = e => (this._updateHandlers.add(e), {
       dispose: () => {
@@ -26,7 +26,7 @@ class CopilotListDocument {
     this.solutionCountTarget = a;
     this._ctx = e;
     this._uri = t;
-    this._showLogprobs = i.getConfig(e, i.ConfigKey.DebugShowScores);
+    this._showLogprobs = config.getConfig(e, config.ConfigKey.DebugShowScores);
     this.startPosition = this.completionContext.insertPosition;
   }
   async getDocument() {

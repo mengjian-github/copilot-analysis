@@ -4,9 +4,9 @@ Object.defineProperty(exports, "__esModule", {
 exports.FailingTelemetryReporter = exports.assertHasProperty = exports.withInlineTelemetryCapture = exports.withOptionalTelemetryCapture = exports.withTelemetryCapture = exports.withInMemoryTelemetry = exports.allEvents = exports.isException = exports.isEvent = exports.isRestrictedTelemetryMessage = exports.isStandardTelemetryMessage = exports.collectCapturedTelemetry = exports.TestPromiseQueue = exports.PromiseQueue = void 0;
 const r = require(39491);
 const i = require(47870);
-const o = require(82279);
-const s = require(6333);
-const a = require(89176);
+const request = require("./request");
+const telemetry = require("./telemetry");
+const appinsights = require("./app-insights");
 const c = require(2356);
 const l = require(66036);
 class PromiseQueue {
@@ -28,8 +28,8 @@ class TestPromiseQueue {
   }
 }
 async function collectCapturedTelemetry(e) {
-  const t = e.get(s.TelemetryEndpointUrl).getUrl();
-  const n = await e.get(o.Fetcher).fetch(t, {});
+  const t = e.get(telemetry.TelemetryEndpointUrl).getUrl();
+  const n = await e.get(request.Fetcher).fetch(t, {});
   const i = (await n.json()).messages ?? [];
   for (const e of i) r.strictEqual(e.tags["ai.cloud.roleInstance"], "REDACTED");
   return i;
@@ -42,15 +42,15 @@ async function f(e, t, n) {
   const i = Math.floor(1e5 * Math.random()).toString();
   delete process.env.http_proxy;
   delete process.env.https_proxy;
-  const o = e.get(s.TelemetryEndpointUrl).getUrl();
-  e.get(s.TelemetryEndpointUrl).setUrlForTesting(`http://localhost:${r}/${i}`);
-  a.setupTelemetryReporters(e, "copilot-test", t);
+  const o = e.get(telemetry.TelemetryEndpointUrl).getUrl();
+  e.get(telemetry.TelemetryEndpointUrl).setUrlForTesting(`http://localhost:${r}/${i}`);
+  appinsights.setupTelemetryReporters(e, "copilot-test", t);
   try {
     const t = new TestPromiseQueue();
     e.forceSet(PromiseQueue, t);
     const r = await n(e);
     await t.awaitPromises();
-    await e.get(s.TelemetryReporters).deactivate();
+    await e.get(telemetry.TelemetryReporters).deactivate();
     const i = await async function (e) {
       for (let t = 0; t < 3; t++) {
         await new Promise(e => setTimeout(e, 1e3 * t));
@@ -62,16 +62,16 @@ async function f(e, t, n) {
     }(e);
     return [i, r];
   } finally {
-    e.get(s.TelemetryEndpointUrl).setUrlForTesting(o);
+    e.get(telemetry.TelemetryEndpointUrl).setUrlForTesting(o);
   }
 }
 exports.TestPromiseQueue = TestPromiseQueue;
 exports.collectCapturedTelemetry = collectCapturedTelemetry;
 exports.isStandardTelemetryMessage = function (e) {
-  return e.iKey === a.APP_INSIGHTS_KEY;
+  return e.iKey === appinsights.APP_INSIGHTS_KEY;
 };
 exports.isRestrictedTelemetryMessage = function (e) {
-  return e.iKey === a.APP_INSIGHTS_KEY_SECURE;
+  return e.iKey === appinsights.APP_INSIGHTS_KEY_SECURE;
 };
 exports.isEvent = isEvent;
 exports.isException = function (e) {
@@ -84,8 +84,8 @@ exports.allEvents = function (e) {
 exports.withInMemoryTelemetry = async function (e, t) {
   const n = new l.TelemetrySpy();
   const r = new l.TelemetrySpy();
-  e.get(s.TelemetryReporters).setReporter(n);
-  e.get(s.TelemetryReporters).setSecureReporter(r);
+  e.get(telemetry.TelemetryReporters).setReporter(n);
+  e.get(telemetry.TelemetryReporters).setSecureReporter(r);
   const i = new TestPromiseQueue();
   e.forceSet(PromiseQueue, i);
   const o = await t(e);

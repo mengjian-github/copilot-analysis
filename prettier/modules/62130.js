@@ -2,14 +2,14 @@ Object.defineProperty(exports, "__esModule", {
   value: !0
 });
 exports.VSCodeEditorExperimentFilters = void 0;
-const r = require(89496);
-const i = require(85251);
+const vscode = require("vscode");
+const experiment = require("./experiment");
 const o = require(38142);
-class VSCodeEditorExperimentFilters extends i.EditorExperimentFilters {
+class VSCodeEditorExperimentFilters extends experiment.EditorExperimentFilters {
   addEditorSpecificFilters() {
     return {
-      [o.Filter.Build]: r.env.appName,
-      [o.Filter.Language]: r.env.language
+      [o.Filter.Build]: vscode.env.appName,
+      [o.Filter.Language]: vscode.env.language
     };
   }
 }

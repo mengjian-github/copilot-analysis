@@ -2,46 +2,46 @@ Object.defineProperty(exports, "__esModule", {
   value: !0
 });
 exports.decomposeHoverText = exports.ExtensionSymbolDefinitionProvider = void 0;
-const r = require(23055);
-const i = require(89496);
-const o = require(89496);
+const utils = require("./utils");
+const vscode = require("vscode");
+const vscode = require("vscode");
 function decomposeHoverText(e) {
   const t = e.match(/```\w+\n(class|\(\w+\))\s([^`]*)```.*/m);
   if (null != t) {
     const e = function (e) {
       switch (e = e.replace("(", "").replace(")", "")) {
         case "function":
-          return r.SnippetSemantics.Function;
+          return utils.SnippetSemantics.Function;
         case "variable":
-          return r.SnippetSemantics.Variable;
+          return utils.SnippetSemantics.Variable;
         case "parameter":
-          return r.SnippetSemantics.Parameter;
+          return utils.SnippetSemantics.Parameter;
         case "method":
-          return r.SnippetSemantics.Method;
+          return utils.SnippetSemantics.Method;
         case "class":
-          return r.SnippetSemantics.Class;
+          return utils.SnippetSemantics.Class;
         case "module":
-          return r.SnippetSemantics.Module;
+          return utils.SnippetSemantics.Module;
         case "alias":
-          return r.SnippetSemantics.Alias;
+          return utils.SnippetSemantics.Alias;
         case "enum":
-          return r.SnippetSemantics.Enum;
+          return utils.SnippetSemantics.Enum;
         case "interface":
-          return r.SnippetSemantics.Interface;
+          return utils.SnippetSemantics.Interface;
         default:
-          return r.SnippetSemantics.Snippet;
+          return utils.SnippetSemantics.Snippet;
       }
     }(t[1]);
     return [t[2].trim(), e];
   }
-  return ["", r.SnippetSemantics.Snippet];
+  return ["", utils.SnippetSemantics.Snippet];
 }
 exports.ExtensionSymbolDefinitionProvider = class {
   async getSymbolDefinition(e) {
     const t = {
       line: e.position.line,
       character: e.position.character,
-      uri: i.Uri.parse(e.uri)
+      uri: vscode.Uri.parse(e.uri)
     };
     const [n, o] = await this.getHoverTextAndDecompose(t);
     return "" === n ? [] : [{
@@ -50,12 +50,12 @@ exports.ExtensionSymbolDefinitionProvider = class {
       startLine: t.line,
       endLine: t.line,
       semantics: o,
-      provider: r.SnippetProvider.SymbolDef
+      provider: utils.SnippetProvider.SymbolDef
     }];
   }
   async getHoverTextAndDecompose(e) {
-    const t = await i.commands.executeCommand("vscode.executeHoverProvider", e.uri, new o.Position(e.line, e.character));
-    return t[0] && t[0].contents[0] instanceof i.MarkdownString ? decomposeHoverText(t[0].contents[0].value) : ["", r.SnippetSemantics.Snippet];
+    const t = await vscode.commands.executeCommand("vscode.executeHoverProvider", e.uri, new vscode.Position(e.line, e.character));
+    return t[0] && t[0].contents[0] instanceof vscode.MarkdownString ? decomposeHoverText(t[0].contents[0].value) : ["", utils.SnippetSemantics.Snippet];
   }
 };
 exports.decomposeHoverText = decomposeHoverText;
