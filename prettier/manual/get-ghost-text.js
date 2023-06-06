@@ -1,7 +1,11 @@
 Object.defineProperty(exports, "__esModule", {
-  value: !0
+  value: !0,
 });
-exports.getGhostText = exports.completionCache = exports.ResultType = exports.ghostTextLogger = void 0;
+exports.getGhostText =
+  exports.completionCache =
+  exports.ResultType =
+  exports.ghostTextLogger =
+    void 0;
 const utils = require("./utils");
 const i = require(81354);
 const o = require(42600);
@@ -21,7 +25,7 @@ const reporter = require("./status-reporter");
 const v = require(27727);
 const b = require(94969);
 const repo = require("./repo");
-const w = require(51006);
+const ghosttextscore = require('./ghost-text-score');
 const T = require(71124);
 const telemetry = require("./telemetry");
 const env = require("./env");
@@ -30,95 +34,116 @@ const I = require(38965);
 const A = require(85413);
 const telemetryutils = require("./telemetry-utils");
 var P;
-let N;
-let O;
-let R;
-async function M(e, n, r, i, o, s, a) {
-  exports.ghostTextLogger.debug(e, `Getting ${s} from network`);
-  r = r.extendedBy();
-  const c = await async function (e, t) {
-    const n = await e.get(p.Features).overrideNumGhostCompletions();
-    return n ? t.isCycling ? Math.max(0, 3 - n) : n : config.shouldDoParsingTrimming(t.blockMode) && t.multiline ? config.getConfig(e, config.ConfigKey.InlineSuggestCount) : t.isCycling ? 2 : 1;
-  }(e, n);
-  const d = y.getTemperatureForSamples(e, c);
-  const h = {
-    stream: !0,
-    n: c,
-    temperature: d,
+let prefixCache;
+let suffixCache;
+let promptKeyCache;
+
+// ctx, requestPayload, telemetryObject, token, finishedCb, "all completions", async
+async function getCompletion(ctx, requestPayload, telemetryObject, token, finishedCb, s = 'all completions', cb) {
+  exports.ghostTextLogger.debug(ctx, `Getting ${s} from network`);
+  telemetryObject = telemetryObject.extendedBy();
+  const n = await (async function (ctx, requestPayload) {
+    const n = await ctx.get(p.Features).overrideNumGhostCompletions();
+    return n
+      ? requestPayload.isCycling
+        ? Math.max(0, 3 - n)
+        : n
+      : config.shouldDoParsingTrimming(requestPayload.blockMode) && requestPayload.multiline
+      ? config.getConfig(ctx, config.ConfigKey.InlineSuggestCount)
+      : requestPayload.isCycling
+      ? 2
+      : 1;
+  })(ctx, requestPayload);
+  const temperature = y.getTemperatureForSamples(ctx, n);
+  const postOptions = {
+    stream: true,
+    n: n,
+    temperature: temperature,
     extra: {
-      language: n.languageId,
-      next_indent: n.indentation.next ?? 0,
-      trim_by_indentation: config.shouldDoServerTrimming(n.blockMode),
-      prompt_tokens: n.prompt.prefixTokens ?? 0,
-      suffix_tokens: n.prompt.suffixTokens ?? 0
-    }
+      language: requestPayload.languageId,
+      next_indent: requestPayload.indentation.next ?? 0,
+      trim_by_indentation: config.shouldDoServerTrimming(requestPayload.blockMode),
+      prompt_tokens: requestPayload.prompt.prefixTokens ?? 0,
+      suffix_tokens: requestPayload.prompt.suffixTokens ?? 0,
+    },
   };
-  if (n.multiline) {
-    h.stop = ["\n"];
+  if (requestPayload.multiline) {
+    postOptions.stop = ["\n"];
   }
-  if (n.multiline && n.multiLogitBias) {
-    h.logit_bias = {
-      50256: -100
+  if (requestPayload.multiline && requestPayload.multiLogitBias) {
+    postOptions.logit_bias = {
+      50256: -100,
     };
   }
-  const m = Date.now();
+  const now = Date.now();
   const _ = {
     endpoint: "completions",
     uiKind: g.CopilotUiKind.GhostText,
-    isCycling: JSON.stringify(n.isCycling),
-    temperature: JSON.stringify(d),
+    isCycling: JSON.stringify(requestPayload.isCycling),
+    temperature: JSON.stringify(temperature),
     n: JSON.stringify(c),
-    stop: JSON.stringify(h.stop) ?? "unset",
-    logit_bias: JSON.stringify(h.logit_bias ?? null)
+    stop: JSON.stringify(postOptions.stop) ?? "unset",
+    logit_bias: JSON.stringify(postOptions.logit_bias ?? null),
   };
-  const v = telemetry.telemetrizePromptLength(n.prompt);
-  Object.assign(r.properties, _);
-  Object.assign(r.measurements, v);
+  const v = telemetry.telemetrizePromptLength(requestPayload.prompt);
+  Object.assign(telemetryObject.properties, _);
+  Object.assign(telemetryObject.measurements, v);
   try {
-    const s = {
-      prompt: n.prompt,
-      languageId: n.languageId,
-      repoInfo: n.repoInfo,
-      ourRequestId: n.ourRequestId,
-      engineUrl: n.engineURL,
-      count: c,
+    const payload = {
+      prompt: requestPayload.prompt,
+      languageId: requestPayload.languageId,
+      repoInfo: requestPayload.repoInfo,
+      ourRequestId: requestPayload.ourRequestId,
+      engineUrl: requestPayload.engineURL,
+      count: n,
       uiKind: g.CopilotUiKind.GhostText,
-      postOptions: h
+      postOptions: postOptions,
     };
-    if (n.delayMs > 0) {
-      await new Promise(e => setTimeout(e, n.delayMs));
+    if (requestPayload.delayMs > 0) {
+      await new Promise((resolve) => setTimeout(resolve, requestPayload.delayMs));
     }
-    const l = await e.get(g.OpenAIFetcher).fetchAndStreamCompletions(e, s, r, o, i);
-    return "failed" === l.type ? {
-      type: "failed",
-      reason: l.reason,
-      telemetryData: telemetryutils.mkBasicResultTelemetry(r)
-    } : "canceled" === l.type ? (exports.ghostTextLogger.debug(e, "Cancelled after awaiting fetchCompletions"), {
-      type: "canceled",
-      reason: l.reason,
-      telemetryData: telemetryutils.mkCanceledResultTelemetry(r)
-    }) : a(c, m, l.getProcessingTime(), l.choices);
-  } catch (n) {
-    if (request.isAbortError(n)) return {
-      type: "canceled",
-      reason: "network request aborted",
-      telemetryData: telemetryutils.mkCanceledResultTelemetry(r, {
-        cancelledNetworkRequest: !0
-      })
-    };
-    exports.ghostTextLogger.exception(e, n, "Error on ghost text request");
-    e.get(u.UserErrorNotifier).notifyUser(e, n);
-    if ((0, env.shouldFailForDebugPurposes)(e)) throw n;
+    const result = await ctx
+      .get(g.OpenAIFetcher)
+      .fetchAndStreamCompletions(ctx, payload, telemetryObject, finishedCb, token);
+    return "failed" === result.type
+      ? {
+          type: "failed",
+          reason: result.reason,
+          telemetryData: telemetryutils.mkBasicResultTelemetry(telemetryObject),
+        }
+      : "canceled" === result.type
+      ? (exports.ghostTextLogger.debug(
+          ctx,
+          "Cancelled after awaiting fetchCompletions"
+        ),
+        {
+          type: "canceled",
+          reason: result.reason,
+          telemetryData: telemetryutils.mkCanceledResultTelemetry(telemetryObject),
+        })
+      : cb(n, now, result.getProcessingTime(), result.choices);
+  } catch (e) {
+    if (request.isAbortError(e))
+      return {
+        type: "canceled",
+        reason: "network request aborted",
+        telemetryData: telemetryutils.mkCanceledResultTelemetry(telemetryObject, {
+          cancelledNetworkRequest: !0,
+        }),
+      };
+    exports.ghostTextLogger.exception(ctx, e, "Error on ghost text request");
+    ctx.get(u.UserErrorNotifier).notifyUser(ctx, e);
+    if ((0, env.shouldFailForDebugPurposes)(ctx)) throw e;
     return {
       type: "failed",
       reason: "non-abort error on ghost text request",
-      telemetryData: telemetryutils.mkBasicResultTelemetry(r)
+      telemetryData: telemetryutils.mkBasicResultTelemetry(telemetryObject),
     };
   }
 }
-function L(e, t) {
+function trimCompletionText(e, t) {
   const n = {
-    ...e
+    ...e,
   };
   n.completionText = e.completionText.trimEnd();
   if (t.forceSingleLine) {
@@ -128,77 +153,88 @@ function L(e, t) {
 }
 exports.ghostTextLogger = new logger.Logger(logger.LogLevel.INFO, "ghostText");
 (function (e) {
-  e[e.Network = 0] = "Network";
-  e[e.Cache = 1] = "Cache";
-  e[e.TypingAsSuggested = 2] = "TypingAsSuggested";
-  e[e.Cycling = 3] = "Cycling";
-})(P = exports.ResultType || (exports.ResultType = {}));
+  e[(e.Network = 0)] = "Network";
+  e[(e.Cache = 1)] = "Cache";
+  e[(e.TypingAsSuggested = 2)] = "TypingAsSuggested";
+  e[(e.Cycling = 3)] = "Cycling";
+})((P = exports.ResultType || (exports.ResultType = {})));
 exports.completionCache = new s.LRUCacheMap(100);
 const D = new a.Debouncer();
 function B() {
-  return Math.random() > .5;
+  return Math.random() > 0.5;
 }
-function F(e, t, n) {
-  N = e;
-  O = t;
-  R = n;
+function updateGlobalCacheKey(prefix, suffix, promptKey) {
+  prefixCache = prefix;
+  suffixCache = suffix;
+  promptKeyCache = promptKey;
 }
-function j(e, n, r) {
-  const i = s.keyForPrompt(n.prompt);
+
+// // ctx, requestPayload, {
+//   multiline: requestPayload.multiline,
+//   choices: newChoices,
+// }
+function updateCache(ctx, requestPayload, data) {
+  const i = s.keyForPrompt(requestPayload.prompt);
   const o = exports.completionCache.get(i);
-  if (o && o.multiline === r.multiline) {
+  if (o && o.multiline === data.multiline) {
     exports.completionCache.set(i, {
       multiline: o.multiline,
-      choices: o.choices.concat(r.choices)
+      choices: o.choices.concat(data.choices),
     });
   } else {
-    exports.completionCache.set(i, r);
+    exports.completionCache.set(i, data);
   }
-  exports.ghostTextLogger.debug(e, `Appended cached ghost text for key: ${i}, multiline: ${r.multiline}, number of suggestions: ${r.choices.length}`);
+  exports.ghostTextLogger.debug(
+    ctx,
+    `Appended cached ghost text for key: ${i}, multiline: ${r.multiline}, number of suggestions: ${r.choices.length}`
+  );
 }
-function U(e, n) {
-  const r = exports.completionCache.get(e);
-  if (r && (!n || r.multiline)) return r.choices;
+function getCachedChoices(key, requestMultiline) {
+  const value = exports.completionCache.get(key);
+  if (value && (!requestMultiline || value.multiline)) return value.choices;
 }
 function $(e, t, n) {
   if (n.length > 0) {
-    if (t.startsWith(n)) return {
-      completionIndex: e,
-      completionText: t,
-      displayText: t.substr(n.length),
-      displayNeedsWsOffset: !1
-    };
+    if (t.startsWith(n))
+      return {
+        completionIndex: e,
+        completionText: t,
+        displayText: t.substr(n.length),
+        displayNeedsWsOffset: !1,
+      };
     {
       const r = t.substr(0, t.length - t.trimLeft().length);
-      return n.startsWith(r) ? {
-        completionIndex: e,
-        completionText: t,
-        displayText: t.trimLeft(),
-        displayNeedsWsOffset: !0
-      } : {
-        completionIndex: e,
-        completionText: t,
-        displayText: t,
-        displayNeedsWsOffset: !1
-      };
+      return n.startsWith(r)
+        ? {
+            completionIndex: e,
+            completionText: t,
+            displayText: t.trimLeft(),
+            displayNeedsWsOffset: !0,
+          }
+        : {
+            completionIndex: e,
+            completionText: t,
+            displayText: t,
+            displayNeedsWsOffset: !1,
+          };
     }
   }
   return {
     completionIndex: e,
     completionText: t,
     displayText: t,
-    displayNeedsWsOffset: !1
+    displayNeedsWsOffset: !1,
   };
 }
 function V(e, n) {
   const r = n.requestId;
   const i = {
-    choiceIndex: n.choiceIndex.toString()
+    choiceIndex: n.choiceIndex.toString(),
   };
   const o = {
     numTokens: n.numTokens,
     compCharLen: n.completionText.length,
-    numLines: n.completionText.split("\n").length
+    numLines: n.completionText.split("\n").length,
   };
   if (n.meanLogProb) {
     o.meanLogProb = n.meanLogProb;
@@ -208,224 +244,286 @@ function V(e, n) {
   }
   const s = n.telemetryData.extendedBy(i, o);
   s.extendWithRequestId(r);
-  s.measurements.confidence = w.ghostTextScoreConfidence(e, s);
-  s.measurements.quantile = w.ghostTextScoreQuantile(e, s);
-  exports.ghostTextLogger.debug(e, `Extended telemetry for ${n.telemetryData.properties.headerRequestId} with retention confidence ${s.measurements.confidence} (expected as good or better than about ${s.measurements.quantile} of all suggestions)`);
+  s.measurements.confidence = ghosttextscore.ghostTextScoreConfidence(e, s);
+  s.measurements.quantile = ghosttextscore.ghostTextScoreQuantile(e, s);
+  exports.ghostTextLogger.debug(
+    e,
+    `Extended telemetry for ${n.telemetryData.properties.headerRequestId} with retention confidence ${s.measurements.confidence} (expected as good or better than about ${s.measurements.quantile} of all suggestions)`
+  );
   return s;
 }
 function H(e, t, n, r, i) {
   const o = Date.now() - r;
   const s = o - i;
-  const a = n.telemetryData.extendedBy({}, {
-    completionCharLen: n.completionText.length,
-    requestTimeMs: o,
-    processingTimeMs: i,
-    deltaMs: s,
-    meanLogProb: n.meanLogProb || NaN,
-    meanAlternativeLogProb: n.meanAlternativeLogProb || NaN,
-    numTokens: n.numTokens
-  });
+  const a = n.telemetryData.extendedBy(
+    {},
+    {
+      completionCharLen: n.completionText.length,
+      requestTimeMs: o,
+      processingTimeMs: i,
+      deltaMs: s,
+      meanLogProb: n.meanLogProb || NaN,
+      meanAlternativeLogProb: n.meanAlternativeLogProb || NaN,
+      numTokens: n.numTokens,
+    }
+  );
   a.extendWithRequestId(n.requestId);
   telemetry.telemetry(e, `ghostText.${t}`, a);
 }
-exports.getGhostText = async function (e, n, a, u, h, f) {
-  const y = await b.extractPrompt(e, n, a);
-  if ("copilotNotAvailable" === y.type) {
-    exports.ghostTextLogger.debug(e, "Copilot not available, due to the .copilotignore settings");
+
+// e-ctx, n-document, a-position, u-isInvokeTrigger, h-report, f-token
+exports.getGhostText = async function (
+  ctx,
+  document,
+  position,
+  isInvokeTrigger,
+  report,
+  token
+) {
+  const prompt = await b.extractPrompt(ctx, document, position);
+  if ("copilotNotAvailable" === prompt.type) {
+    exports.ghostTextLogger.debug(
+      ctx,
+      "Copilot not available, due to the .copilotignore settings"
+    );
     return {
       type: "abortedBeforeIssued",
-      reason: "Copilot not available due to the .copilotignore settings"
+      reason: "Copilot not available due to the .copilotignore settings",
     };
   }
-  if ("contextTooShort" === y.type) {
-    exports.ghostTextLogger.debug(e, "Breaking, not enough context");
+  if ("contextTooShort" === prompt.type) {
+    exports.ghostTextLogger.debug(ctx, "Breaking, not enough context");
     return {
       type: "abortedBeforeIssued",
-      reason: "Not enough context"
+      reason: "Not enough context",
     };
   }
-  if (f?.isCancellationRequested) {
-    exports.ghostTextLogger.info(e, "Cancelled after extractPrompt");
+  if (token?.isCancellationRequested) {
+    exports.ghostTextLogger.info(ctx, "Cancelled after extractPrompt");
     return {
       type: "abortedBeforeIssued",
-      reason: "Cancelled after extractPrompt"
+      reason: "Cancelled after extractPrompt",
     };
   }
-  const w = function (e, t) {
-    const n = (i = t, 0 != e.lineAt(i).text.substr(i.character).trim().length);
-    const r = function (e, t) {
-      const n = t.lineAt(e).text.substr(e.character).trim();
+  const isMiddleOfTheLine = (function (document, position) {
+    const isMiddleLine =
+      0 !=
+      document.lineAt(position).text.substr(position.character).trim().length;
+    const isValid = (function (position, document) {
+      const n = document
+        .lineAt(position)
+        .text.substr(position.character)
+        .trim();
       return /^\s*[)}\]"'`]*\s*[:{;,]?\s*$/.test(n);
-    }(t, e);
-    var i;
-    if (n && !r) return;
-    return n && r;
-  }(n, a);
-  if (void 0 === w) {
-    exports.ghostTextLogger.debug(e, "Breaking, invalid middle of the line");
+    })(position, document);
+    if (isMiddleLine && !isValid) return;
+    return isMiddleLine && isValid;
+  })(document, position);
+  if (void 0 === isValidMiddleLine) {
+    exports.ghostTextLogger.debug(ctx, "Breaking, invalid middle of the line");
     return {
       type: "abortedBeforeIssued",
-      reason: "Invalid middle of the line"
+      reason: "Invalid middle of the line",
     };
   }
-  const q = e.get(reporter.StatusReporter);
-  const z = e.get(locationfactory.LocationFactory);
-  const K = repo.extractRepoInfoInBackground(e, n.fileName);
-  const G = repo.tryGetGitHubNWO(K) ?? "";
-  const W = repo.getDogFood(K);
-  const Q = await repo.getUserKind(e);
-  const Z = {
-    repoNwo: G,
-    userKind: Q,
-    dogFood: W,
-    fileType: n.languageId
+  const StatusReporter = ctx.get(reporter.StatusReporter);
+  const LocationFactory = ctx.get(locationfactory.LocationFactory);
+  const repoInfo = repo.extractRepoInfoInBackground(ctx, document.fileName);
+  const repoNwo = repo.tryGetGitHubNWO(repoInfo) ?? "";
+  const dogFood = repo.getDogFood(repoInfo);
+  const userKind = await repo.getUserKind(ctx);
+  const userRepoInfo = {
+    repoNwo: repoNwo,
+    userKind: userKind,
+    dogFood: dogFood,
+    fileType: document.languageId,
   };
-  const X = await e.get(p.Features).requestMultilineExploration(Z);
-  const Y = await async function (e, t, n, i, o, s, a, c) {
-    const u = await e.get(config.BlockModeConfig).forLanguage(e, t.languageId);
-    switch (u) {
+  const multiline = await ctx.get(p.Features).requestMultilineExploration(userRepoInfo);
+  const requestConf = await (async function (ctx, document, position, prompt, isInvokeTrigger, isMiddleOfTheLine, report, multiline) {
+    const blockMode = await ctx.get(config.BlockModeConfig).forLanguage(ctx, document.languageId);
+    switch (blockMode) {
       case config.BlockMode.Server:
         return {
           blockMode: config.BlockMode.Server,
-          requestMultiline: !0,
-          isCyclingRequest: o,
-          finishedCb: async e => {}
+          requestMultiline: true,
+          isCyclingRequest: isInvokeTrigger,
+          finishedCb: async (e) => {},
         };
       case config.BlockMode.Parsing:
       case config.BlockMode.ParsingAndServer:
-      default:
-        {
-          const l = await async function (e, t, n, i, o, s) {
-            if (s) {
-              const e = await v.isEmptyBlockStart(t, n);
-              const r = await v.isEmptyBlockStart(t, t.lineAt(n).range.end);
-              o.properties.isEmptyBlockStartDocumentPosition = e.toString();
-              o.properties.isEmptyBlockStartDocumentPositionRangeEnd = r.toString();
-              o.properties.inlineSuggestion = i.toString();
-              o.measurements.documentLineCount = t.lineCount;
-              o.measurements.positionLine = n.line;
-            }
-            if (t.lineCount >= 8e3) telemetry.telemetry(e, "ghostText.longFileMultilineSkip", telemetry.TelemetryData.createAndMarkAsIssued({
-              languageId: t.languageId,
-              lineCount: String(t.lineCount),
-              currentLine: String(n.line)
-            }));else {
-              if (!i && utils.isSupportedLanguageId(t.languageId)) {
-                let e = await v.isEmptyBlockStart(t, n);
-                if (!e && s) {
-                  e = B();
-                }
-                return e;
+      default: {
+        const l = await (async function (ctx, document, position, isMiddleOfTheLine, report, multiline) {
+          if (multiline) {
+            const e = await v.isEmptyBlockStart(document, position);
+            const r = await v.isEmptyBlockStart(document, document.lineAt(position).range.end);
+            report.properties.isEmptyBlockStartDocumentPosition = e.toString();
+            report.properties.isEmptyBlockStartDocumentPositionRangeEnd =
+              r.toString();
+            report.properties.inlineSuggestion = isMiddleOfTheLine.toString();
+            report.measurements.documentLineCount = document.lineCount;
+            report.measurements.positionLine = position.line;
+          }
+          if (document.lineCount >= 8e3)
+            telemetry.telemetry(
+              ctx,
+              "ghostText.longFileMultilineSkip",
+              telemetry.TelemetryData.createAndMarkAsIssued({
+                languageId: document.languageId,
+                lineCount: String(document.lineCount),
+                currentLine: String(position.line),
+              })
+            );
+          else {
+            if (!isMiddleOfTheLine && utils.isSupportedLanguageId(document.languageId)) {
+              let e = await v.isEmptyBlockStart(document, position);
+              if (!e && multiline) {
+                e = B();
               }
-              if (i && utils.isSupportedLanguageId(t.languageId)) {
-                let e = (await v.isEmptyBlockStart(t, n)) || (await v.isEmptyBlockStart(t, t.lineAt(n).range.end));
-                if (!e && s) {
-                  e = B();
-                }
-                return e;
+              return e;
+            }
+            if (isMiddleOfTheLine && utils.isSupportedLanguageId(document.languageId)) {
+              let e =
+                (await v.isEmptyBlockStart(document, position)) ||
+                (await v.isEmptyBlockStart(document, document.lineAt(position).range.end));
+              if (!e && multiline) {
+                e = B();
               }
+              return e;
             }
-            return !1;
-          }(e, t, n, s, a, c);
-          return l ? {
-            blockMode: u,
-            requestMultiline: !0,
-            isCyclingRequest: !1,
-            finishedCb: async r => {
-              let o;
-              o = i.trailingWs.length > 0 && !i.prompt.prefix.endsWith(i.trailingWs) ? e.get(locationfactory.LocationFactory).position(n.line, Math.max(n.character - i.trailingWs.length, 0)) : n;
-              return v.isBlockBodyFinished(e, t, o, r);
+          }
+          return false;
+        })(ctx, document, position, isMiddleOfTheLine, report, multiline);
+        return l
+          ? {
+              blockMode: blockMode,
+              requestMultiline: true,
+              isCyclingRequest: false,
+              finishedCb: async (r) => {
+                let o;
+                o =
+                  prompt.trailingWs.length > 0 &&
+                  !prompt.prompt.prefix.endsWith(prompt.trailingWs)
+                    ? ctx
+                        .get(locationfactory.LocationFactory)
+                        .position(
+                          position.line,
+                          Math.max(position.character - prompt.trailingWs.length, 0)
+                        )
+                    : position;
+                return v.isBlockBodyFinished(ctx, document, o, r);
+              },
             }
-          } : {
-            blockMode: u,
-            requestMultiline: !1,
-            isCyclingRequest: o,
-            finishedCb: async e => {}
-          };
-        }
+          : {
+              blockMode: blockMode,
+              requestMultiline: false,
+              isCyclingRequest: isInvokeTrigger,
+              finishedCb: async (e) => {},
+            };
+      }
     }
-  }(e, n, a, y, u, w, h, X);
-  if (f?.isCancellationRequested) {
-    exports.ghostTextLogger.info(e, "Cancelled after requestMultiline");
+  })(ctx, document, position, prompt, isInvokeTrigger, isMiddleOfTheLine, report, multiline);
+  if (token?.isCancellationRequested) {
+    exports.ghostTextLogger.info(ctx, "Cancelled after requestMultiline");
     return {
       type: "abortedBeforeIssued",
-      reason: "Cancelled after requestMultiline"
+      reason: "Cancelled after requestMultiline",
     };
   }
-  const [J] = b.trimLastLine(n.getText(z.range(z.position(0, 0), a)));
-  let ee = function (e, n, r, i) {
-    const o = function (e, n, r, i) {
-      const o = !!N && n.startsWith(N);
-      const s = null != O && r.suffix == O;
-      if (!(N && R && o && s)) return;
-      const a = U(R, i);
-      if (!a) return;
-      const c = n.substring(N.length);
-      exports.ghostTextLogger.debug(e, `Getting completions for user-typing flow - remaining prefix: ${c}`);
-      const l = [];
-      a.forEach(e => {
-        const t = L(e, {
-          forceSingleLine: !1
+  const [prefix] = b.trimLastLine(
+    document.getText(LocationFactory.range(LocationFactory.position(0, 0), position))
+  );
+  let choices = (function (ctx, prefix, prompt, requestMultiline) {
+    const cachedChoices = (function (ctx, prefix, prompt, requestMultiline) {
+      const o = !!prefixCache && prefix.startsWith(prefixCache);
+      const s = null != suffixCache && prompt.suffix == suffixCache;
+      if (!(prefixCache && promptKeyCache && o && s)) return;  // 实际上是缓存了
+
+      const choices = getCachedChoices(promptKeyCache, requestMultiline);
+      if (!choices) return;
+      
+      const remainingPrefix = prefix.substring(prefixCache.length);
+      exports.ghostTextLogger.debug(
+        ctx,
+        `Getting completions for user-typing flow - remaining prefix: ${remainingPrefix}`
+      );
+      const newChoices = [];
+      choices.forEach((choice) => {
+        const newChoice = trimCompletionText(choice, {
+          forceSingleLine: false,
         });
-        if (t.completionText.startsWith(c)) {
-          t.completionText = t.completionText.substring(c.length);
-          l.push(t);
+        if (newChoice.completionText.startsWith(remainingPrefix)) {
+          newChoice.completionText = newChoice.completionText.substring(remainingPrefix.length);
+          newChoices.push(newChoice);
         }
       });
-      return l;
-    }(e, n, r, i);
-    if (o && o.length > 0) return [o, P.TypingAsSuggested];
-    const a = function (e, n, r, i) {
-      const o = s.keyForPrompt(r);
-      exports.ghostTextLogger.debug(e, `Trying to get completions from cache for key: ${o}`);
-      const a = U(o, i);
-      if (a) {
-        exports.ghostTextLogger.debug(e, `Got completions from cache for key: ${o}`);
+      return newChoices;
+    })(ctx, prefix, prompt, requestMultiline);
+    if (cachedChoices && cachedChoices.length > 0) return [cachedChoices, P.TypingAsSuggested];
+
+    const a = (function (ctx, prefix, prompt, requestMultiline) {
+      const key = s.keyForPrompt(prompt);
+      exports.ghostTextLogger.debug(
+        ctx,
+        `Trying to get completions from cache for key: ${key}`
+      );
+      const cachedChoices = getCachedChoices(key, requestMultiline);
+      if (cachedChoices) {
+        exports.ghostTextLogger.debug(
+          ctx,
+          `Got completions from cache for key: ${key}`
+        );
         const s = [];
-        a.forEach(e => {
-          const t = L(e, {
-            forceSingleLine: !i
+        cachedChoices.forEach((e) => {
+          const t = trimCompletionText(e, {
+            forceSingleLine: !requestMultiline,
           });
           s.push(t);
         });
-        const c = s.filter(e => e.completionText);
+        const c = s.filter((e) => e.completionText);
         if (c.length > 0) {
-          F(n, r.suffix, o);
+          updateGlobalCacheKey(prefix, prompt.suffix, key);
         }
         return c;
       }
-    }(e, n, r, i);
+    })(ctx, prefix, prompt, requestMultiline);
     return a && a.length > 0 ? [a, P.Cache] : void 0;
-  }(e, J, y.prompt, Y.requestMultiline);
-  const te = o.v4();
-  const ne = await m.getEngineURL(e, repo.tryGetGitHubNWO(K), n.languageId, W, Q, h);
-  const re = await e.get(p.Features).beforeRequestWaitMs(Z);
-  const ie = await e.get(p.Features).multiLogitBias(Z);
-  const oe = {
-    blockMode: Y.blockMode,
-    languageId: n.languageId,
-    repoInfo: K,
-    engineURL: ne,
-    ourRequestId: te,
-    prefix: J,
-    prompt: y.prompt,
-    multiline: Y.requestMultiline,
-    indentation: v.contextIndentation(n, a),
-    isCycling: u,
-    delayMs: re,
-    multiLogitBias: ie
+  })(ctx, prefix, prompt.prompt, requestConf.requestMultiline);
+  const requestId = o.v4();
+  const engineURL = await m.getEngineURL(
+    ctx,
+    repo.tryGetGitHubNWO(repoInfo),
+    document.languageId,
+    dogFood,
+    userKind,
+    report
+  );
+  const delayMs = await ctx.get(p.Features).beforeRequestWaitMs(userRepoInfo);
+  const multiLogitBias = await ctx.get(p.Features).multiLogitBias(userRepoInfo);
+  const requestPayload = {
+    blockMode: requestConf.blockMode,
+    languageId: document.languageId,
+    repoInfo: repoInfo,
+    engineURL: engineURL,
+    ourRequestId: requestId,
+    prefix: prefix,
+    prompt: prompt.prompt,
+    multiline: requestConf.requestMultiline,
+    indentation: v.contextIndentation(document, position),
+    isCycling: isInvokeTrigger,
+    delayMs: delayMs,
+    multiLogitBias: multiLogitBias,
   };
-  const se = await e.get(p.Features).debouncePredict();
-  const ae = await e.get(p.Features).contextualFilterEnable();
-  const ce = await e.get(p.Features).contextualFilterAcceptThreshold();
-  const le = await e.get(p.Features).contextualFilterEnableTree();
-  const ue = await e.get(p.Features).contextualFilterExplorationTraffic();
-  let pe = !1;
-  if (se || ae) {
-    pe = !0;
+  const debouncePredict = await ctx.get(p.Features).debouncePredict();
+  const contextualFilterEnable = await ctx.get(p.Features).contextualFilterEnable();
+  const contextualFilterAcceptThreshold = await ctx.get(p.Features).contextualFilterAcceptThreshold();
+  const contextualFilterEnableTree = await ctx.get(p.Features).contextualFilterEnableTree();
+  const contextualFilterExplorationTraffic = await ctx.get(p.Features).contextualFilterExplorationTraffic();
+  let pe = false;
+  if (debouncePredict || contextualFilterEnable) {
+    pe = true;
   }
-  const de = await e.get(language.LanguageDetection).detectLanguage(n);
-  const he = function (e, t, n, r, o, s, a, c, l) {
+  const language = await ctx.get(language.LanguageDetection).detectLanguage(document);
+  const telemetryObject = (function (e, t, n, r, o, s, a, c, l) {
     const u = e.get(locationfactory.LocationFactory);
     const p = t.lineAt(o.line);
     const d = t.getText(u.range(p.range.start, o));
@@ -433,7 +531,7 @@ exports.getGhostText = async function (e, n, a, u, h, f) {
     const f = {
       languageId: t.languageId,
       beforeCursorWhitespace: JSON.stringify("" === d.trim()),
-      afterCursorWhitespace: JSON.stringify("" === h.trim())
+      afterCursorWhitespace: JSON.stringify("" === h.trim()),
     };
     if (t.languageId !== n.languageId) {
       f.detectedLanguageId = n.languageId;
@@ -443,22 +541,44 @@ exports.getGhostText = async function (e, n, a, u, h, f) {
       ...telemetry.telemetrizePromptLength(s.prompt),
       promptEndPos: t.offsetAt(o),
       documentLength: t.getText().length,
-      delayMs: r.delayMs
+      delayMs: r.delayMs,
     };
     const y = a.extendedBy(f, m);
-    y.properties.promptChoices = JSON.stringify(s.promptChoices, (e, t) => t instanceof Map ? Array.from(t.entries()).reduce((e, [t, n]) => ({
-      ...e,
-      [t]: n
-    }), {}) : t);
-    y.properties.promptBackground = JSON.stringify(s.promptBackground, (e, t) => t instanceof Map ? Array.from(t.values()) : t);
-    const _ = Array.from(s.neighborSource.entries()).map(e => [e[0], e[1].map(e => i.SHA256(e).toString())]);
+    y.properties.promptChoices = JSON.stringify(s.promptChoices, (e, t) =>
+      t instanceof Map
+        ? Array.from(t.entries()).reduce(
+            (e, [t, n]) => ({
+              ...e,
+              [t]: n,
+            }),
+            {}
+          )
+        : t
+    );
+    y.properties.promptBackground = JSON.stringify(s.promptBackground, (e, t) =>
+      t instanceof Map ? Array.from(t.values()) : t
+    );
+    const _ = Array.from(s.neighborSource.entries()).map((e) => [
+      e[0],
+      e[1].map((e) => i.SHA256(e).toString()),
+    ]);
     y.properties.neighborSource = JSON.stringify(_);
     y.measurements.promptComputeTimeMs = s.computeTimeMs;
     if (c) {
-      y.measurements.contextualFilterScore = I.contextualFilterScore(e, y, s.prompt, l);
+      y.measurements.contextualFilterScore = I.contextualFilterScore(
+        e,
+        y,
+        s.prompt,
+        l
+      );
     }
     const v = r.repoInfo;
-    y.properties.gitRepoInformation = void 0 === v ? "unavailable" : v === repo.ComputationStatus.PENDING ? "pending" : "available";
+    y.properties.gitRepoInformation =
+      void 0 === v
+        ? "unavailable"
+        : v === repo.ComputationStatus.PENDING
+        ? "pending"
+        : "available";
     if (void 0 !== v && v !== repo.ComputationStatus.PENDING) {
       y.properties.gitRepoUrl = v.url;
       y.properties.gitRepoHost = v.hostname;
@@ -473,155 +593,261 @@ exports.getGhostText = async function (e, n, a, u, h, f) {
     y.properties.headerRequestId = r.ourRequestId;
     telemetry.telemetry(e, "ghostText.issued", y);
     return y;
-  }(e, n, de, oe, a, y, h, pe, le);
-  if (Y.isCyclingRequest && (ee?.[0].length ?? 0) > 1 || !Y.isCyclingRequest && void 0 !== ee) exports.ghostTextLogger.info(e, "Found inline suggestions locally");else {
-    q?.setProgress();
-    if (Y.isCyclingRequest) {
-      const n = await async function (e, n, r, i, o) {
-        return M(e, n, r, i, o, "all completions", async (o, s, a, c) => {
-          const l = [];
-          for await (const n of c) {
-            if (i?.isCancellationRequested) return exports.ghostTextLogger.debug(e, "Cancelled after awaiting choices iterator"), {
-              type: "canceled",
-              reason: "after awaiting choices iterator",
-              telemetryData: (0, telemetryutils.mkCanceledResultTelemetry)(r)
-            };
+  })(e, n, language, requestPayload, a, prompt, h, pe, contextualFilterEnableTree);
+  if (
+    (requestConf.isCyclingRequest && (choices?.[0].length ?? 0) > 1) ||
+    (!requestConf.isCyclingRequest && void 0 !== choices)
+  )
+    exports.ghostTextLogger.info(ctx, "Found inline suggestions locally");
+  else {
+    StatusReporter?.setProgress();
+    if (requestConf.isCyclingRequest) {
+      const result = await (async function (ctx, requestPayload, telemetryObject, token, finishedCb) {
+        // n, now, result.getProcessingTime(), result.choices
+        return getCompletion(ctx, requestPayload, telemetryObject, token, finishedCb, "all completions", async (n, now, processingTime, choices) => {
+          const newChoices = [];
+          for await (const choice of choices) {
+            if (token?.isCancellationRequested)
+              return (
+                exports.ghostTextLogger.debug(
+                  ctx,
+                  "Cancelled after awaiting choices iterator"
+                ),
+                {
+                  type: "canceled",
+                  reason: "after awaiting choices iterator",
+                  telemetryData: (0, telemetryutils.mkCanceledResultTelemetry)(
+                    telemetryObject
+                  ),
+                }
+              );
             if (n.completionText.trimEnd()) {
-              if (-1 !== l.findIndex(e => e.completionText.trim() === n.completionText.trim())) continue;
-              l.push(n);
+              if (
+                -1 !==
+                newChoices.findIndex(
+                  (e) => e.completionText.trim() === choice.completionText.trim()
+                )
+              )
+                continue;
+              newChoices.push(choice);
             }
           }
-          return l.length > 0 && (j(e, n, {
-            multiline: n.multiline,
-            choices: l
-          }), H(e, "cyclingPerformance", l[0], s, a)), {
-            type: "success",
-            value: l,
-            telemetryData: (0, telemetryutils.mkBasicResultTelemetry)(r),
-            telemetryBlob: r
-          };
+          return (
+            newChoices.length > 0 &&
+              (updateCache(ctx, requestPayload, {
+                multiline: requestPayload.multiline,
+                choices: newChoices,
+              }),
+              H(ctx, "cyclingPerformance", newChoices[0], now, processingTime)),
+            {
+              type: "success",
+              value: newChoices,
+              telemetryData: (0, telemetryutils.mkBasicResultTelemetry)(telemetryObject),
+              telemetryBlob: telemetryObject,
+            }
+          );
         });
-      }(e, oe, he, f, Y.finishedCb);
-      if ("success" === n.type) {
-        const e = ee?.[0] ?? [];
-        n.value.forEach(t => {
-          -1 === e.findIndex(e => e.completionText.trim() === t.completionText.trim()) && e.push(t);
-        }), ee = [e, P.Cycling];
-      } else if (void 0 === ee) return q?.removeProgress(), n;
+      })(ctx, requestPayload, telemetryObject, token, requestConf.finishedCb);
+      if ("success" === result.type) {
+        const e = choices?.[0] ?? [];
+        result.value.forEach((t) => {
+          -1 ===
+            e.findIndex(
+              (e) => e.completionText.trim() === t.completionText.trim()
+            ) && e.push(t);
+        }),
+          (choices = [e, P.Cycling]);
+      } else if (void 0 === choices) return StatusReporter?.removeProgress(), result;
     } else {
-      const n = await (0, A.getDebounceLimit)(e, he);
+      const n = await (0, A.getDebounceLimit)(ctx, telemetryObject);
       try {
         await D.debounce(n);
       } catch {
         return {
           type: "canceled",
           reason: "by debouncer",
-          telemetryData: (0, telemetryutils.mkCanceledResultTelemetry)(he)
+          telemetryData: (0, telemetryutils.mkCanceledResultTelemetry)(telemetryObject),
         };
       }
-      if (f?.isCancellationRequested) return exports.ghostTextLogger.info(e, "Cancelled during debounce"), {
-        type: "canceled",
-        reason: "during debounce",
-        telemetryData: (0, telemetryutils.mkCanceledResultTelemetry)(he)
-      };
-      if (ae && he.measurements.contextualFilterScore && he.measurements.contextualFilterScore < ce / 100 && Math.random() < 1 - ue / 100) return exports.ghostTextLogger.info(e, "Cancelled by contextual filter"), {
-        type: "canceled",
-        reason: "contextualFilterScore below threshold",
-        telemetryData: (0, telemetryutils.mkCanceledResultTelemetry)(he)
-      };
-      const r = await async function (e, n, r, i, o) {
-        return M(e, n, r, i, o, "completions", async (o, a, c, l) => {
+      if (token?.isCancellationRequested)
+        return (
+          exports.ghostTextLogger.info(ctx, "Cancelled during debounce"),
+          {
+            type: "canceled",
+            reason: "during debounce",
+            telemetryData: (0, telemetryutils.mkCanceledResultTelemetry)(telemetryObject),
+          }
+        );
+      if (
+        contextualFilterEnable &&
+        telemetryObject.measurements.contextualFilterScore &&
+        telemetryObject.measurements.contextualFilterScore < contextualFilterAcceptThreshold / 100 &&
+        Math.random() < 1 - contextualFilterExplorationTraffic / 100
+      )
+        return (
+          exports.ghostTextLogger.info(ctx, "Cancelled by contextual filter"),
+          {
+            type: "canceled",
+            reason: "contextualFilterScore below threshold",
+            telemetryData: (0, telemetryutils.mkCanceledResultTelemetry)(telemetryObject),
+          }
+        );
+      const r = await (async function (e, n, r, i, o) {
+        return getCompletion(e, n, r, i, o, "completions", async (o, a, c, l) => {
           const u = l[Symbol.asyncIterator](),
             d = await u.next();
-          if (d.done) return exports.ghostTextLogger.debug(e, "All choices redacted"), {
-            type: "empty",
-            reason: "all choices redacted",
-            telemetryData: (0, telemetryutils.mkBasicResultTelemetry)(r)
-          };
-          if (i?.isCancellationRequested) return exports.ghostTextLogger.debug(e, "Cancelled after awaiting redactedChoices iterator"), {
-            type: "canceled",
-            reason: "after awaiting redactedChoices iterator",
-            telemetryData: (0, telemetryutils.mkCanceledResultTelemetry)(r)
-          };
+          if (d.done)
+            return (
+              exports.ghostTextLogger.debug(e, "All choices redacted"),
+              {
+                type: "empty",
+                reason: "all choices redacted",
+                telemetryData: (0, telemetryutils.mkBasicResultTelemetry)(r),
+              }
+            );
+          if (i?.isCancellationRequested)
+            return (
+              exports.ghostTextLogger.debug(
+                e,
+                "Cancelled after awaiting redactedChoices iterator"
+              ),
+              {
+                type: "canceled",
+                reason: "after awaiting redactedChoices iterator",
+                telemetryData: (0, telemetryutils.mkCanceledResultTelemetry)(r),
+              }
+            );
           const h = d.value;
-          if (void 0 === h) return exports.ghostTextLogger.debug(e, "Got undefined choice from redactedChoices iterator"), {
-            type: "empty",
-            reason: "got undefined choice from redactedChoices iterator",
-            telemetryData: (0, telemetryutils.mkBasicResultTelemetry)(r)
-          };
+          if (void 0 === h)
+            return (
+              exports.ghostTextLogger.debug(
+                e,
+                "Got undefined choice from redactedChoices iterator"
+              ),
+              {
+                type: "empty",
+                reason: "got undefined choice from redactedChoices iterator",
+                telemetryData: (0, telemetryutils.mkBasicResultTelemetry)(r),
+              }
+            );
           H(e, "performance", h, a, c);
           const f = o - 1;
-          exports.ghostTextLogger.debug(e, `Awaited first result, id:  ${h.choiceIndex}`), function (e, n, r) {
-            const i = (0, s.keyForPrompt)(n.prompt);
-            F(n.prefix, n.prompt.suffix, i), exports.completionCache.set(i, r), exports.ghostTextLogger.debug(e, `Cached ghost text for key: ${i}, multiline: ${r.multiline}, number of suggestions: ${r.choices.length}`);
-          }(e, n, {
-            multiline: n.multiline,
-            choices: [h]
-          });
+          exports.ghostTextLogger.debug(
+            e,
+            `Awaited first result, id:  ${h.choiceIndex}`
+          ),
+            (function (e, n, r) {
+              const i = (0, s.keyForPrompt)(n.prompt);
+              updateGlobalCacheKey(n.prefix, n.prompt.suffix, i),
+                exports.completionCache.set(i, r),
+                exports.ghostTextLogger.debug(
+                  e,
+                  `Cached ghost text for key: ${i}, multiline: ${r.multiline}, number of suggestions: ${r.choices.length}`
+                );
+            })(e, n, {
+              multiline: n.multiline,
+              choices: [h],
+            });
           const m = [];
           for (let e = 0; e < f; e++) m.push(u.next());
-          const g = Promise.all(m).then(async r => {
-            (await e.get(p.Features).fastCancellation()) && u.next(), exports.ghostTextLogger.debug(e, `Awaited remaining results, number of results: ${r.length}`);
+          const g = Promise.all(m).then(async (r) => {
+            (await e.get(p.Features).fastCancellation()) && u.next(),
+              exports.ghostTextLogger.debug(
+                e,
+                `Awaited remaining results, number of results: ${r.length}`
+              );
             const i = [];
             for (const n of r) {
               const r = n.value;
-              if (void 0 !== r && (exports.ghostTextLogger.info(e, `GhostText later completion: [${r.completionText}]`), r.completionText.trimEnd())) {
-                if (-1 !== i.findIndex(e => e.completionText.trim() === r.completionText.trim())) continue;
-                if (r.completionText.trim() === h.completionText.trim()) continue;
+              if (
+                void 0 !== r &&
+                (exports.ghostTextLogger.info(
+                  e,
+                  `GhostText later completion: [${r.completionText}]`
+                ),
+                r.completionText.trimEnd())
+              ) {
+                if (
+                  -1 !==
+                  i.findIndex(
+                    (e) => e.completionText.trim() === r.completionText.trim()
+                  )
+                )
+                  continue;
+                if (r.completionText.trim() === h.completionText.trim())
+                  continue;
                 i.push(r);
               }
             }
-            i.length > 0 && j(e, n, {
-              multiline: n.multiline,
-              choices: i
-            });
+            i.length > 0 &&
+              updateCache(e, n, {
+                multiline: n.multiline,
+                choices: i,
+              });
           });
-          return (0, env.isRunningInTest)(e) && (await g), {
-            type: "success",
-            value: L(d.value, {
-              forceSingleLine: !1
-            }),
-            telemetryData: (0, telemetryutils.mkBasicResultTelemetry)(r),
-            telemetryBlob: r
-          };
+          return (
+            (0, env.isRunningInTest)(e) && (await g),
+            {
+              type: "success",
+              value: trimCompletionText(d.value, {
+                forceSingleLine: !1,
+              }),
+              telemetryData: (0, telemetryutils.mkBasicResultTelemetry)(r),
+              telemetryBlob: r,
+            }
+          );
         });
-      }(e, oe, he, f, Y.finishedCb);
-      if ("success" !== r.type) return q?.removeProgress(), r;
-      ee = [[r.value], P.Network];
+      })(e, requestPayload, telemetryObject, f, requestConf.finishedCb);
+      if ("success" !== r.type) return StatusReporter?.removeProgress(), r;
+      choices = [[r.value], P.Network];
     }
-    q?.removeProgress();
+    StatusReporter?.removeProgress();
   }
-  if (void 0 === ee) return {
-    type: "failed",
-    reason: "internal error: choices should be defined after network call",
-    telemetryData: telemetryutils.mkBasicResultTelemetry(he)
-  };
-  const [fe, me] = ee;
-  const ge = c.asyncIterableMapFilter(c.asyncIterableFromArray(fe), async r => T.postProcessChoice(e, "ghostText", n, a, r, w, exports.ghostTextLogger));
+  if (void 0 === choices)
+    return {
+      type: "failed",
+      reason: "internal error: choices should be defined after network call",
+      telemetryData: telemetryutils.mkBasicResultTelemetry(telemetryObject),
+    };
+  const [fe, resultType] = choices;
+  const ge = c.asyncIterableMapFilter(c.asyncIterableFromArray(fe), async (r) =>
+    T.postProcessChoice(
+      ctx,
+      "ghostText",
+      document,
+      position,
+      r,
+      isMiddleOfTheLine,
+      exports.ghostTextLogger
+    )
+  );
   const ye = [];
   for await (const r of ge) {
-    const i = w && T.checkSuffix(n, a, r);
-    if (f?.isCancellationRequested) {
-      exports.ghostTextLogger.info(e, "Cancelled after post processing completions");
+    const i = isMiddleOfTheLine && T.checkSuffix(document, position, r);
+    if (token?.isCancellationRequested) {
+      exports.ghostTextLogger.info(
+        ctx,
+        "Cancelled after post processing completions"
+      );
       return {
         type: "canceled",
         reason: "after post processing completions",
-        telemetryData: telemetryutils.mkCanceledResultTelemetry(he)
+        telemetryData: telemetryutils.mkCanceledResultTelemetry(telemetryObject),
       };
     }
-    const o = V(e, r);
+    const o = V(ctx, r);
     const s = {
-      completion: $(r.choiceIndex, r.completionText, y.trailingWs),
+      completion: $(r.choiceIndex, r.completionText, prompt.trailingWs),
       telemetry: o,
-      isMiddleOfTheLine: w,
-      coversSuffix: i
+      isMiddleOfTheLine: isMiddleOfTheLine,
+      coversSuffix: i,
     };
     ye.push(s);
   }
   return {
     type: "success",
-    value: [ye, me],
-    telemetryData: telemetryutils.mkBasicResultTelemetry(he),
-    telemetryBlob: he
+    value: [ye, resultType],
+    telemetryData: telemetryutils.mkBasicResultTelemetry(telemetryObject),
+    telemetryBlob: telemetryObject,
   };
 };

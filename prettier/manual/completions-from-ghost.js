@@ -3,61 +3,91 @@ Object.defineProperty(exports, "__esModule", {
 });
 exports.completionsFromGhostTextResults = void 0;
 const r = require(42600);
-const i = require(16403);
-const o = require(89334);
-const s = require(43286);
-exports.completionsFromGhostTextResults = function (e, texts, n, a, c, l, u) {
-  const p = e.get(i.LocationFactory);
-  const d = a.lineAt(c);
+const locationfactory = require("./location-factory");
+const getghosttext = require("./get-ghost-text");
+const normalizeindent = require("./normalize-indent");
+exports.completionsFromGhostTextResults = function (
+  ctx,
+  texts,
+  resultType,
+  document,
+  position,
+  textEditorOptions,
+  u
+) {
+  const LocationFactory = ctx.get(locationfactory.LocationFactory);
+  const line = document.lineAt(position);
   let h = texts.map((text) => {
     let range;
     let newText = "";
-    if (l) {
-      text.completion = s.normalizeIndentCharacter(
-        l,
+    if (textEditorOptions) {
+      // 处理tab问题
+      text.completion = normalizeindent.normalizeIndentCharacter(
+        textEditorOptions,
         text.completion,
-        d.isEmptyOrWhitespace
+        line.isEmptyOrWhitespace
       );
     }
-    if (text.completion.displayNeedsWsOffset && d.isEmptyOrWhitespace)
-      (range = p.range(p.position(c.line, 0), c)),
+    if (text.completion.displayNeedsWsOffset && line.isEmptyOrWhitespace)
+      (range = LocationFactory.range(
+        LocationFactory.position(position.line, 0),
+        position
+      )),
         (newText = text.completion.completionText);
     else if (
-      d.isEmptyOrWhitespace &&
-      text.completion.completionText.startsWith(d.text)
+      line.isEmptyOrWhitespace &&
+      text.completion.completionText.startsWith(line.text)
     )
-      (range = p.range(p.position(c.line, 0), c)),
+      (range = LocationFactory.range(
+        LocationFactory.position(position.line, 0),
+        position
+      ))
         (newText = text.completion.completionText);
     else {
-      const n = a.getWordRangeAtPosition(c);
+      const wordRange = document.getWordRangeAtPosition(position);
+      // 如果是中间的话
       if (text.isMiddleOfTheLine) {
-        const n = a.lineAt(c),
-          r = p.range(p.position(c.line, 0), c),
-          o = a.getText(r);
-        (range = text.coversSuffix ? n.range : r),
-          (newText = o + text.completion.displayText);
-      } else if (n) {
-        const r = a.getText(n);
-        (range = p.range(n.start, c)), (newText = r + text.completion.completionText);
-      } else {
-        const n = p.range(p.position(c.line, 0), c);
-        (range = n), (newText = a.getText(n) + text.completion.displayText);
+        const line = document.lineAt(position);
+        const lineRange = LocationFactory.range(
+          LocationFactory.position(position.line, 0),
+          position
+        );
+        const lineText = document.getText(lineRange);
+        range = text.coversSuffix ? line.range : lineRange;
+        newText = lineText + text.completion.displayText;
+      }
+      // 如果当前光标刚好在单词上
+      else if (wordRange) {
+        const word = document.getText(wordRange);
+        range = LocationFactory.range(wordRange.start, position);
+        newText = word + text.completion.completionText;
+      } 
+      // 正常就是在行尾补全
+      else {
+        range = LocationFactory.range(
+          LocationFactory.position(position.line, 0),
+          position
+        );
+        newText = document.getText(range) + text.completion.displayText;
       }
     }
     return {
       uuid: r.v4(),
       text: newText,
       range: range,
-      file: a.uri,
+      file: document.uri,
       index: text.completion.completionIndex,
       telemetry: text.telemetry,
       displayText: text.completion.displayText,
-      position: c,
-      offset: a.offsetAt(c),
-      resultType: n,
+      position: position,
+      offset: document.offsetAt(position),
+      resultType: resultType,
     };
   });
-  if (n === o.ResultType.TypingAsSuggested && void 0 !== u) {
+  if (
+    resultType === getghosttext.ResultType.TypingAsSuggested &&
+    void 0 !== u
+  ) {
     const e = h.find((e) => e.index === u);
     if (e) {
       const t = h.filter((e) => e.index !== u);
