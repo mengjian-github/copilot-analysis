@@ -23,7 +23,7 @@ const g = require(24419);
 const y = require(40937);
 const reporter = require("./status-reporter");
 const v = require(27727);
-const b = require(94969);
+const extractprompt = require('./extract-prompt');
 const repo = require("./repo");
 const ghosttextscore = require('./ghost-text-score');
 const T = require(71124);
@@ -280,7 +280,9 @@ exports.getGhostText = async function (
   report,
   token
 ) {
-  const prompt = await b.extractPrompt(ctx, document, position);
+  // 1. 提取prompt
+  const prompt = await extractprompt.extractPrompt(ctx, document, position);
+  // 2. 边界判断
   if ("copilotNotAvailable" === prompt.type) {
     exports.ghostTextLogger.debug(
       ctx,
@@ -432,6 +434,8 @@ exports.getGhostText = async function (
   const [prefix] = b.trimLastLine(
     document.getText(LocationFactory.range(LocationFactory.position(0, 0), position))
   );
+
+  // 3. 读取缓存
   let choices = (function (ctx, prefix, prompt, requestMultiline) {
     const cachedChoices = (function (ctx, prefix, prompt, requestMultiline) {
       const o = !!prefixCache && prefix.startsWith(prefixCache);
@@ -488,6 +492,7 @@ exports.getGhostText = async function (
     })(ctx, prefix, prompt, requestMultiline);
     return a && a.length > 0 ? [a, P.Cache] : void 0;
   })(ctx, prefix, prompt.prompt, requestConf.requestMultiline);
+
   const requestId = o.v4();
   const engineURL = await m.getEngineURL(
     ctx,
@@ -594,6 +599,8 @@ exports.getGhostText = async function (
     telemetry.telemetry(e, "ghostText.issued", y);
     return y;
   })(e, n, language, requestPayload, a, prompt, h, pe, contextualFilterEnableTree);
+
+  // 4. 真正开始发起请求
   if (
     (requestConf.isCyclingRequest && (choices?.[0].length ?? 0) > 1) ||
     (!requestConf.isCyclingRequest && void 0 !== choices)
@@ -803,6 +810,8 @@ exports.getGhostText = async function (
     }
     StatusReporter?.removeProgress();
   }
+
+  
   if (void 0 === choices)
     return {
       type: "failed",

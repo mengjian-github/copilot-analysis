@@ -55,7 +55,7 @@ async function provideInlineCompletions(
       );
 
     // 这里拿到整个代码提示的结果
-    const b = await getghosttext.getGhostText(
+    const ghostText = await getghosttext.getGhostText(
       ctx,
       document,
       position,
@@ -64,7 +64,7 @@ async function provideInlineCompletions(
       token
     );
 
-    const [texts, resultType] = b.value;
+    const [texts, resultType] = ghostText.value;
     
     if (token.isCancellationRequested)
       return (
@@ -89,7 +89,7 @@ async function provideInlineCompletions(
       )?.options,
       y
     );
-    const S = completions.map((completion) => {
+    const newCompletions = completions.map((completion) => {
       const { text, range: i } = completion;
       const range = new vscode.Range(
         new vscode.Position(i.start.line, i.start.character),
@@ -112,15 +112,15 @@ async function provideInlineCompletions(
       };
       return s;
     });
-    return 0 === S.length
+    return 0 === newCompletions.length
       ? {
           type: "empty",
           reason: "no completions in final result",
           telemetryData: b.telemetryData,
         }
       : {
-          ...b,
-          value: S,
+          ...ghostText,
+          value: newCompletions,
         };
   })(ctx, document, position, context, token);
   return await telemetryutils.handleGhostTextResultTelemetry(ctx, b);
@@ -265,15 +265,15 @@ exports.resetPartialAcceptanceState = resetPartialAcceptanceState;
 exports.handleGhostTextShown = handleGhostTextShown;
 exports.handleGhostTextPostInsert = handleGhostTextPostInsert;
 exports.registerGhostText = function (context) {
-  e.get(main.VsCodeExtensionContext).subscriptions.push(
+  context.get(main.VsCodeExtensionContext).subscriptions.push(
     vscode.languages.registerInlineCompletionItemProvider(
       {
         pattern: "**",
       },
-      new InlineCompletionItemProvider(contexte)
+      new InlineCompletionItemProvider(context)
     ),
     vscode.commands.registerCommand("_ghostTextPostInsert", async (t) =>
-      handleGhostTextPostInsert(contexte, t)
+      handleGhostTextPostInsert(context, t)
     )
   );
 };
