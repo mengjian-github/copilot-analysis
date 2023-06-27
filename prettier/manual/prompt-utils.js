@@ -114,7 +114,7 @@ exports.PromptWishlist = class {
     kind,
     priority,
     tokens = this.tokenizer.tokenLength(text),
-    i = NaN
+    score = NaN
   ) {
     text = this.convertLineEndings(text);
     const id = this.content.length;
@@ -130,7 +130,7 @@ exports.PromptWishlist = class {
     });
     return id;
   }
-  appendLineForLine(lines, kind, priority) {
+  appendLineForLine(text, kind, priority) {
     const lineArr = (lines = this.convertLineEndings(text)).split("\n");
     for (let i = 0; i < lineArr.length - 1; i++) lineArr[i] += "\n";
     const lines = [];
@@ -228,7 +228,7 @@ exports.PromptWishlist = class {
         promptBackground.markUnused(element);
       }
     });
-    u.sort((e, t) => e.index - t.index);
+    results.sort((e, t) => e.index - t.index);
     let prefix = results.reduce((e, t) => e + t.element.text, "");
     let prefixLength = this.tokenizer.tokenLength(prefix);
     for (; prefixLength > maxPromptLength; ) {
