@@ -259,7 +259,7 @@ exports.getPrompt = async function (fileSystem, resourceInfo, opts = {}, neighbo
         )),
   ];
   function $() {
-    const e = Math.round((promptOpts.snippetPercent / 100) * promptOpts.maxPromptLength);
+    const maxSnippetLength = Math.round((promptOpts.snippetPercent / 100) * promptOpts.maxPromptLength);
     c.processSnippetsForWishlist(
       snippets,
       resourceInfo.languageId,
@@ -271,7 +271,7 @@ exports.getPrompt = async function (fileSystem, resourceInfo, opts = {}, neighbo
         high: highSnippetPriority,
       },
       promptOpts.numberOfSnippets,
-      e
+      maxSnippetLength
     ).forEach((e) => {
       let t = p.PromptElementKind.SimilarFile;
       if (e.provider === c.SnippetProvider.Retrieval) {
@@ -284,6 +284,8 @@ exports.getPrompt = async function (fileSystem, resourceInfo, opts = {}, neighbo
       promptWishlist.append(e.announcedSnippet, t, e.priority, e.tokens, e.normalizedScore);
     });
   }
+
+  // 这个判断分支默认会进来
   if (promptOpts.snippetPosition === m.TopOfText) {
     $();
   }
@@ -302,7 +304,7 @@ exports.getPrompt = async function (fileSystem, resourceInfo, opts = {}, neighbo
         (V.push(promptWishlist.append(n, p.PromptElementKind.AfterCursor, beforeCursorPriority)),
         V.length > 1 && promptWishlist.require(V[V.length - 2], V[V.length - 1]));
   } else
-    promptWishlist.appendLineForLine(H, p.PromptElementKind.BeforeCursor, beforeCursorPriority).forEach((e) =>
+    promptWishlist.appendLineForLine(source.substring(0, offset), p.PromptElementKind.BeforeCursor, beforeCursorPriority).forEach((e) =>
       V.push(e)
     );
   if (h.Top === promptOpts.languageMarker && V.length > 0 && void 0 !== languageMarkerId) {

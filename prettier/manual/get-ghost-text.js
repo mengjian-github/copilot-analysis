@@ -440,7 +440,7 @@ exports.getGhostText = async function (
     const cachedChoices = (function (ctx, prefix, prompt, requestMultiline) {
       const o = !!prefixCache && prefix.startsWith(prefixCache);
       const s = null != suffixCache && prompt.suffix == suffixCache;
-      if (!(prefixCache && promptKeyCache && o && s)) return;  // 实际上是缓存了
+      if (!(prefixCache && promptKeyCache && o && s)) return;  
 
       const choices = getCachedChoices(promptKeyCache, requestMultiline);
       if (!choices) return;
@@ -811,7 +811,7 @@ exports.getGhostText = async function (
     StatusReporter?.removeProgress();
   }
 
-  
+
   if (void 0 === choices)
     return {
       type: "failed",

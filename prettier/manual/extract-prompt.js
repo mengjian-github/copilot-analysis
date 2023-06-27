@@ -15,8 +15,8 @@ Object.defineProperty(exports, "__esModule", {
   const h = require(51470);
   const symbol = require("./symbol");
   function trimLastLine(e) {
-    const t = e.split("\n");
-    const n = t[t.length - 1];
+    const arr = e.split("\n");
+    const n = arr[arr.length - 1];
     const r = n.length - n.trimRight().length;
     const i = e.slice(0, e.length - r);
     const o = e.slice(i.length);
