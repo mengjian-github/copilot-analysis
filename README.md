@@ -134,7 +134,7 @@ module.exports = o;
 
 ### 3. 优化压缩后的语法
 
-JS代码经过压缩后，会产生大量的逗号运算符、短路写法、三元表达式、括号闭包等等，非常阻碍阅读，这里参考了https://github.com/thakkarparth007/copilot-explorer这个项目所做的一些逆向工作，对语法进行了一系列处理：
+JS代码经过压缩后，会产生大量的逗号运算符、短路写法、三元表达式、括号闭包等等，非常阻碍阅读，这里参考了https://github.com/thakkarparth007/copilot-explorer 这个项目所做的一些逆向工作，对语法进行了一系列处理：
 
 ```jsx
 function prettier(ast) {
